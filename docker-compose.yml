@@ -1,0 +1,132 @@
+name: barcodepapel
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker Compose for LOCAL DEVELOPMENT
+# Production uses Dockerfile directly via Coolify (target: production)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ─── Application (PHP + Nginx) ───────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: barcodepapel_app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      APP_NAME: "BarcodePapel"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: ${APP_KEY}
+      APP_URL: http://192.168.1.119:8080
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: barcodepapel
+      DB_USERNAME: barcodepapel
+      DB_PASSWORD: secret
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: "noreply@barcodepapel.test"
+      VITE_APP_URL: http://192.168.1.119:8080
+    volumes:
+      # Mount source code for live changes (PHP files reflect instantly)
+      - .:/var/www/html
+      # Persist storage folder (uploads, logs, etc.)
+      - app_storage:/var/www/html/storage/app/public
+      # Exclude vendor and node_modules from host mount
+      - vendor:/var/www/html/vendor
+      - node_modules:/var/www/html/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - barcodepapel
+
+  # ─── Vite dev server (HMR) ──────────────────────────────────────────────────
+  node:
+    image: node:20-alpine
+    container_name: barcodepapel_node
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    networks:
+      - barcodepapel
+
+  # ─── MySQL ───────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: barcodepapel_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: barcodepapel
+      MYSQL_USER: barcodepapel
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "barcodepapel", "-psecret"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - barcodepapel
+
+  # ─── PostgreSQL alternative (uncomment to use instead of MySQL) ──────────────
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: barcodepapel_postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: barcodepapel
+  #     POSTGRES_USER: barcodepapel
+  #     POSTGRES_PASSWORD: secret
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U barcodepapel"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
+  #   networks:
+  #     - barcodepapel
+
+  # ─── Mailpit (local email testing) ──────────────────────────────────────────
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: barcodepapel_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"   # Web UI
+      - "1025:1025"   # SMTP
+    networks:
+      - barcodepapel
+
+networks:
+  barcodepapel:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  # postgres_data:
+  app_storage:
+  vendor:
+  node_modules:

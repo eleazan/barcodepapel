@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1: Node — compile frontend assets (production only)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS node-build
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci --frozen-lockfile
+
+COPY vite.config.js tailwind.config.js postcss.config.js ./
+COPY resources/css ./resources/css
+COPY resources/js  ./resources/js
+COPY resources/views ./resources/views
+
+RUN npm run build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2: Development
+# serversideup/php already includes: pdo_mysql, pdo_pgsql, redis, gd, zip,
+# intl, bcmath, opcache, mbstring, pcntl, exif + Nginx + PHP-FPM
+# ─────────────────────────────────────────────────────────────────────────────
+FROM serversideup/php:8.5-fpm-nginx AS development
+
+WORKDIR /var/www/html
+
+COPY --chown=www-data:www-data composer.json composer.lock ./
+RUN composer install --no-scripts --no-autoloader
+
+COPY --chown=www-data:www-data . .
+RUN composer dump-autoload
+
+EXPOSE 80
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 3: Production
+# ─────────────────────────────────────────────────────────────────────────────
+FROM serversideup/php:8.5-fpm-nginx AS production
+
+LABEL maintainer="BarcodePapel <dev@barcodepapel.com>"
+LABEL org.opencontainers.image.title="BarcodePapel"
+LABEL org.opencontainers.image.description="Laravel 13 Application"
+
+WORKDIR /var/www/html
+
+# Install PHP deps (no dev, optimized)
+COPY --chown=www-data:www-data composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist
+
+COPY --chown=www-data:www-data . .
+
+# Copy compiled frontend assets from node-build
+COPY --from=node-build --chown=www-data:www-data /app/public/build ./public/build
+
+RUN composer dump-autoload --optimize --no-dev \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost/up || exit 1
