@@ -21,13 +21,15 @@ class ProductBookDetail extends Model
         'paginas',
         'edicion',
         'anio_publicacion',
+        'google_books_synced_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'paginas'          => 'integer',
-            'anio_publicacion' => 'integer',
+            'paginas'                => 'integer',
+            'anio_publicacion'       => 'integer',
+            'google_books_synced_at' => 'datetime',
         ];
     }
 
