@@ -57,7 +57,7 @@
                     <label for="image" class="form-label">Imagen principal</label>
                     @if ($product->image)
                         <div class="mb-2 flex items-center gap-3">
-                            <img src="{{ Storage::url($product->image) }}" alt="" class="w-16 h-16 rounded-lg object-cover bg-sky-50">
+                            <img src="{{ $product->image_url }}" alt="" class="w-16 h-16 rounded-lg object-cover bg-sky-50">
                             <span class="text-xs text-gray-400">Imagen actual</span>
                         </div>
                     @endif

@@ -61,6 +61,12 @@ class FetchBookDataFromIsbn implements ShouldQueue
 
         if (! empty($data['items'])) {
             $info = $data['items'][0]['volumeInfo'] ?? [];
+            $lang = $info['language'] ?? '';
+
+            // Título: solo reemplazamos si Google Books lo tiene en español o catalán
+            if (! empty($info['title']) && in_array($lang, ['es', 'ca'], true)) {
+                $this->product->name = $info['title'];
+            }
 
             if (! empty($info['subtitle'])) {
                 $detail->subtitulo = $info['subtitle'];
@@ -90,6 +96,8 @@ class FetchBookDataFromIsbn implements ShouldQueue
                 if ($thumb) {
                     // Google Books devuelve HTTP; forzamos HTTPS
                     $this->product->image = str_replace('http://', 'https://', $thumb);
+                    // Activar el producto en cuanto tiene portada
+                    $this->product->is_active = true;
                 }
             }
 
