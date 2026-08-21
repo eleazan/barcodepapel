@@ -62,7 +62,7 @@ RUN composer dump-autoload --optimize --no-dev \
     && php artisan route:cache \
     && php artisan view:cache
 
-EXPOSE 80
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost/up || exit 1
+    CMD curl -f http://localhost:8080/up || exit 1
