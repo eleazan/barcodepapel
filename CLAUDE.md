@@ -23,8 +23,9 @@ docker compose up -d
 npm run dev                        # Vite HMR en :5173
 
 # Tests
-./vendor/bin/pest                  # Todos los tests
+./vendor/bin/pest                  # Todos los tests (Unit + Feature)
 ./vendor/bin/pest --filter=NombreTest  # Test específico
+npm run test:e2e                   # Tests de navegador (Playwright) — ver tests/e2e/README.md
 
 # Code style
 ./vendor/bin/pint                  # Corregir estilo
@@ -67,7 +68,12 @@ app/
   Models/
     Traits/HasAudit.php   # Trait de auditoría — añadir `use HasAudit` a cualquier modelo
     *.php                 # Category, Product, Order, OrderItem, DeliveryZone, User, NotificationLog, ProductImage, AuditLog
+  Rules/                  # Reglas de validación (CodigoPostalConReparto)
+  View/Components/Store/  # Componentes Blade de clase (CartBadge)
   Services/
+    Cart/                 # Carrito en sesión (Cart, CartItem)
+    Checkout/             # PlaceOrderService: carrito → pedido
+    Delivery/             # DeliveryZoneResolver: CP → zona y tarifa
     Notifications/        # Sistema de notificaciones extensible por canales
       NotificationChannel.php       # Interface para canales
       OrderNotificationService.php  # Orquestador: send, sendAll, resend
@@ -120,6 +126,21 @@ tests/
 - **PDF:** albarán de pedido con `barryvdh/laravel-dompdf` (ruta `GET /admin/orders/{order}/pdf`)
 - **Dashboard:** gráficas con Chart.js (ventas 7 días, pedidos por estado, top productos)
 - **Galería:** tabla `product_images`, upload múltiple, borrado selectivo en edición
+
+## Carrito y checkout (tienda pública)
+
+- **Carrito en sesión:** `App\Services\Cart\Cart` (registrado como `scoped`), clave de sesión `carrito` → `[product_id => cantidad]`. Solo guarda IDs y cantidades: los precios se releen de BD en cada lectura para que un cambio de tarifa se aplique antes de confirmar.
+- **Reconciliación:** en cada lectura descarta productos borrados o despublicados, retira los agotados y recorta cantidades al stock real. Los avisos se exponen en `Cart::adjustments()` y se pintan en la vista del carrito.
+- **Tope por línea:** `Cart::MAX_QUANTITY` (99), además del stock disponible.
+- **Zonas de reparto:** `App\Services\Delivery\DeliveryZoneResolver` resuelve CP → zona. Si un CP tiene varios barrios de alta, **aplica la tarifa más baja**. Sin zona activa no hay venta posible (no hay paquetería externa).
+- **Confirmación del pedido:** `App\Services\Checkout\PlaceOrderService` — transacción con `lockForUpdate()` sobre los productos, descuento de stock, creación de `Order` + `OrderItem`, y `CheckoutException` (con rollback) si el stock no alcanza.
+- **Validación:** `App\Http\Requests\Store\CheckoutRequest` + regla `App\Rules\CodigoPostalConReparto`.
+- **Pago:** no hay pasarela. Se paga en el momento de la entrega.
+- **Acceso a la confirmación:** por sesión para quien acaba de comprar (sin cuenta), por `user_id` para clientes registrados, y para admins. Un tercero recibe 403.
+- **Rutas:** `/carrito` (index/add/update/remove/clear), `/comprobar-codigo-postal` (JSON), `/finalizar-pedido` (show/store, POST con `throttle:10,1`), `/pedido/{orderNumber}`.
+- **Componentes Alpine:** `postalChecker(endpoint, cpInicial)` y `checkoutForm(...)` en `resources/js/app.js`.
+- **Componente Blade:** `<x-store.cart-badge />` (contador en la cabecera, acepta `mobile`) y `<x-store.flash />` (mensajes flash de la tienda).
+- **Pedidos y Verial:** el pedido web nace `pendiente` y **no** se envía al ERP en ese momento. Entra en Verial cuando el admin lo marca `preparado` (`Admin\OrderController::updateStatus`), que es el mismo umbral que usa `verial:send-pending-orders`. Así hay un único punto de disparo y no se duplican envíos.
 
 ## Sistema de notificaciones
 
