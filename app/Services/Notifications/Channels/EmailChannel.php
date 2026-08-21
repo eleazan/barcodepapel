@@ -30,23 +30,80 @@ class EmailChannel implements NotificationChannel
 
     public function send(Order $order, string $recipient, string $event, array $context = []): array
     {
+        [$subject, $body] = $event === NotificationLog::EVENT_ORDER_CREATED
+            ? $this->buildOrderCreated($order)
+            : $this->buildStatusChanged($order);
+
+        Mail::raw($body, function ($message) use ($recipient, $subject) {
+            $message->to($recipient)
+                ->subject($subject);
+        });
+
+        return [
+            'subject' => $subject,
+            'body'    => $body,
+        ];
+    }
+
+    /**
+     * Acuse de recibo del pedido, con el detalle de las líneas.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function buildOrderCreated(Order $order): array
+    {
+        $subject = "🧾 Hemos recibido tu pedido {$order->order_number}";
+
+        $lineas = $order->items->map(function ($item) {
+            $nombre = $item->product?->name ?? 'Producto';
+
+            return "  · {$item->quantity} × {$nombre} — ".$this->money((float) $item->total);
+        })->all();
+
+        $body = implode("\n", array_merge([
+            "¡Hola, {$order->customer_name}!",
+            '',
+            "Hemos recibido tu pedido {$order->order_number}. Lo estamos revisando y te avisaremos cuando esté preparado para el reparto.",
+            '',
+            'Detalle del pedido:',
+        ], $lineas, [
+            '',
+            'Subtotal: '.$this->money((float) $order->subtotal),
+            'Gastos de reparto: '.$this->money((float) $order->delivery_fee),
+            'Total: '.$this->money((float) $order->total),
+            '',
+            "Dirección de entrega: {$order->delivery_address}, CP {$order->postal_code}",
+            '',
+            'El pago se realiza en el momento de la entrega. Repartimos nosotros mismos en toda la isla, sin paquetería externa.',
+            '',
+            'Gracias por comprar en tu librería de barrio.',
+            'Barco de Papel — Ibiza',
+        ]));
+
+        return [$subject, $body];
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function buildStatusChanged(Order $order): array
+    {
         $statusLabel = $order->statusLabel();
-        $previousStatus = $context['previous_status'] ?? null;
 
         $emoji = match ($order->status) {
-            Order::STATUS_PREPARADO => '📦',
+            Order::STATUS_PREPARADO  => '📦',
             Order::STATUS_EN_REPARTO => '🚚',
-            Order::STATUS_ENTREGADO => '✅',
-            default => '📋',
+            Order::STATUS_ENTREGADO  => '✅',
+            default                  => '📋',
         };
 
         $subject = "{$emoji} Tu pedido {$order->order_number} — {$statusLabel}";
 
         $statusMessage = match ($order->status) {
-            Order::STATUS_PREPARADO => 'Tu pedido está listo y preparado para el reparto.',
+            Order::STATUS_PREPARADO  => 'Tu pedido está listo y preparado para el reparto.',
             Order::STATUS_EN_REPARTO => 'Tu pedido está en camino. ¡Pronto lo recibirás!',
-            Order::STATUS_ENTREGADO => 'Tu pedido ha sido entregado. ¡Gracias por tu compra!',
-            default => 'El estado de tu pedido ha sido actualizado.',
+            Order::STATUS_ENTREGADO  => 'Tu pedido ha sido entregado. ¡Gracias por tu compra!',
+            default                  => 'El estado de tu pedido ha sido actualizado.',
         };
 
         $body = implode("\n", [
@@ -58,19 +115,16 @@ class EmailChannel implements NotificationChannel
             $statusMessage,
             '',
             "Dirección de entrega: {$order->delivery_address}, CP {$order->postal_code}",
-            "Total: " . number_format((float) $order->total, 2, ',', '.') . ' €',
+            'Total: '.$this->money((float) $order->total),
             '',
-            'Un saludo, BarcodePapel',
+            'Un saludo, Barco de Papel',
         ]);
 
-        Mail::raw($body, function ($message) use ($recipient, $subject, $order) {
-            $message->to($recipient)
-                ->subject($subject);
-        });
+        return [$subject, $body];
+    }
 
-        return [
-            'subject' => $subject,
-            'body' => $body,
-        ];
+    private function money(float $amount): string
+    {
+        return number_format($amount, 2, ',', '.').' €';
     }
 }

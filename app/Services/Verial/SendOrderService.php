@@ -27,14 +27,14 @@ class SendOrderService
             );
         }
 
-        $order->loadMissing(['items.product']);
+        $order->loadMissing(['items.product', 'user']);
 
         $payload = $this->buildPayload($order);
 
         try {
             $response = $this->client->post('NuevoDocClienteWS', $payload);
 
-            $verialPedidoId = (int) ($response['CodigoPedido'] ?? $response['Codigo'] ?? 0);
+            $verialPedidoId   = (int) ($response['CodigoPedido'] ?? $response['Codigo'] ?? 0);
             $verialReferencia = (string) ($response['Referencia'] ?? $response['referencia'] ?? '');
 
             $order->update([
@@ -66,7 +66,7 @@ class SendOrderService
             );
 
             throw new \RuntimeException(
-                'Error al enviar pedido a Verial: ' . $e->getMessage(),
+                'Error al enviar pedido a Verial: '.$e->getMessage(),
                 previous: $e
             );
         }
@@ -81,20 +81,20 @@ class SendOrderService
 
         $lineas = $order->items->map(function ($item) {
             return [
-                'CodigoArticulo'  => $item->product?->verial_id ?? 0,
-                'Cantidad'        => $item->quantity,
-                'PrecioUnitario'  => (float) $item->unit_price,
+                'CodigoArticulo' => $item->product?->verial_id ?? 0,
+                'Cantidad'       => $item->quantity,
+                'PrecioUnitario' => (float) $item->unit_price,
             ];
         })->toArray();
 
         return [
-            'CodigoCliente'   => $clienteId,
-            'NombreCliente'   => $order->customer_name,
-            'EmailCliente'    => $order->customer_email,
-            'TelefonoCliente' => $order->customer_phone,
+            'CodigoCliente'    => $clienteId,
+            'NombreCliente'    => $order->customer_name,
+            'EmailCliente'     => $order->customer_email,
+            'TelefonoCliente'  => $order->customer_phone,
             'DireccionEntrega' => $order->delivery_address,
-            'CodigoPostal'    => $order->postal_code,
-            'Lineas'          => $lineas,
+            'CodigoPostal'     => $order->postal_code,
+            'Lineas'           => $lineas,
         ];
     }
 }

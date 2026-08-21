@@ -120,6 +120,73 @@ Alpine.data('asyncForm', () => ({
     },
 }));
 
+// Alpine.js component: comprobador de codigo postal (carrito y checkout)
+const postalChecker = (endpoint, cpInicial = '') => ({
+    endpoint,
+    cp: cpInicial,
+    estado: null,       // null | 'ok' | 'fuera' | 'invalido' | 'error'
+    cargando: false,
+    gastos: null,       // importe formateado devuelto por el servidor
+    gastosValor: null,  // importe numerico, para calcular el total
+    zona: null,
+
+    init() {
+        if (this.cp) {
+            this.comprobar();
+        }
+    },
+
+    async comprobar() {
+        if (! /^[0-9]{5}$/.test(this.cp)) {
+            this.estado = this.cp ? 'invalido' : null;
+            this.gastos = null;
+            this.gastosValor = null;
+            return;
+        }
+
+        this.cargando = true;
+
+        try {
+            const url = `${this.endpoint}?codigo_postal=${encodeURIComponent(this.cp)}`;
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+
+            if (! response.ok) {
+                throw new Error('Respuesta no valida');
+            }
+
+            const data = await response.json();
+
+            this.estado = data.cubierto ? 'ok' : 'fuera';
+            this.gastos = data.gastos_envio_formateado;
+            this.gastosValor = data.gastos_envio;
+            this.zona = data.zona;
+        } catch (error) {
+            this.estado = 'error';
+            this.gastos = null;
+            this.gastosValor = null;
+        } finally {
+            this.cargando = false;
+        }
+    },
+});
+
+Alpine.data('postalChecker', postalChecker);
+
+// Alpine.js component: formulario de checkout (codigo postal + total en vivo)
+Alpine.data('checkoutForm', (endpoint, cpInicial = '') => ({
+    ...postalChecker(endpoint, cpInicial),
+    enviando: false,
+
+    totalFormateado(subtotal) {
+        const total = Number(subtotal) + Number(this.gastosValor ?? 0);
+
+        return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'EUR',
+        }).format(total);
+    },
+}));
+
 // Initialize Alpine
 window.Alpine = Alpine;
 Alpine.start();

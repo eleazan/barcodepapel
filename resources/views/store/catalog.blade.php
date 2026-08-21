@@ -160,9 +160,9 @@
                     @else
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
                             @foreach ($products as $product)
-                                <a href="{{ route('product', $product) }}" class="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-brand-200 hover:shadow-lg hover:shadow-brand-50/50 transition-all duration-300 hover:-translate-y-0.5">
+                                <div class="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-brand-200 hover:shadow-lg hover:shadow-brand-50/50 transition-all duration-300 hover:-translate-y-0.5 flex flex-col">
                                     {{-- Image --}}
-                                    <div class="aspect-[4/3] bg-gray-50 relative overflow-hidden">
+                                    <a href="{{ route('product', $product) }}" class="block aspect-[4/3] bg-gray-50 relative overflow-hidden">
                                         @if ($product->image)
                                             <img src="{{ $product->image_url }}" alt="{{ $product->name }}" width="400" height="300" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                                         @else
@@ -173,15 +173,36 @@
                                         @unless ($product->hasStock())
                                             <span class="absolute top-3 left-3 px-2.5 py-1 bg-gray-900/70 text-white text-xs font-medium rounded-full">Agotado</span>
                                         @endunless
-                                    </div>
+                                    </a>
 
                                     {{-- Info --}}
-                                    <div class="p-4">
+                                    <div class="p-4 flex flex-col flex-1">
                                         <p class="text-xs text-brand-700 font-medium mb-1">{{ $product->category->name }}</p>
-                                        <h3 class="font-medium text-gray-900 text-sm leading-snug mb-2 group-hover:text-brand-700 transition-colors line-clamp-2">{{ $product->name }}</h3>
-                                        <p class="font-display text-lg text-gray-900">{{ $product->formattedPrice() }}</p>
+                                        <h3 class="font-medium text-gray-900 text-sm leading-snug mb-2 line-clamp-2">
+                                            <a href="{{ route('product', $product) }}" class="group-hover:text-brand-700 transition-colors">{{ $product->name }}</a>
+                                        </h3>
+                                        <p class="font-display text-lg text-gray-900 mb-3">{{ $product->formattedPrice() }}</p>
+
+                                        {{-- Añadir al carrito --}}
+                                        <div class="mt-auto">
+                                            @if ($product->hasStock())
+                                                <form method="POST" action="{{ route('cart.add', $product) }}">
+                                                    @csrf
+                                                    <button
+                                                        type="submit"
+                                                        class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-brand-50 text-brand-700 text-sm font-medium rounded-full hover:bg-brand-600 hover:text-white transition-colors"
+                                                        aria-label="Añadir {{ $product->name }} al carrito"
+                                                    >
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                                        Añadir
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <span class="block w-full text-center px-3 py-2 bg-gray-50 text-gray-400 text-sm font-medium rounded-full cursor-not-allowed">Agotado</span>
+                                            @endif
+                                        </div>
                                     </div>
-                                </a>
+                                </div>
                             @endforeach
                         </div>
 

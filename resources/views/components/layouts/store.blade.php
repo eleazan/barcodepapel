@@ -151,10 +151,16 @@
                     @guest
                         <a href="{{ route('login') }}" class="store-nav-link">Iniciar sesi&oacute;n</a>
                     @endguest
+                    <x-store.cart-badge />
                     <a href="{{ route('catalog') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-full hover:bg-brand-700 transition-all duration-200 hover:shadow-lg hover:shadow-brand-600/25">
                         Ver productos
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                     </a>
+                </div>
+
+                {{-- Mobile: carrito + hamburguesa --}}
+                <div class="flex items-center gap-1 lg:hidden">
+                    <x-store.cart-badge />
                 </div>
 
                 {{-- Mobile hamburger --}}
@@ -194,6 +200,7 @@
                 <a href="{{ route('delivery') }}" @click="mobileOpen = false" class="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">Reparto</a>
                 <a href="{{ route('blog.index') }}" @click="mobileOpen = false" class="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">Blog</a>
                 <a href="{{ route('contact') }}" @click="mobileOpen = false" class="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">Contacto</a>
+                <x-store.cart-badge mobile />
                 <div class="pt-3 border-t border-gray-100">
                     @auth
                         <a href="{{ route('dashboard') }}" class="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-brand-50 hover:text-brand-700 transition-colors">Mi cuenta</a>
@@ -209,6 +216,7 @@
 
     {{-- ==================== MAIN CONTENT ==================== --}}
     <main class="flex-1">
+        <x-store.flash />
         {{ $slot }}
     </main>
 
