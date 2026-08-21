@@ -14,12 +14,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('
-            DELETE d1 FROM product_book_details d1
-            INNER JOIN product_book_details d2
-                ON d1.product_id = d2.product_id
-               AND d1.id > d2.id
-        ');
+        // De cada product_id se conserva la ficha más antigua. El DELETE con JOIN
+        // solo lo entiende MySQL, así que se resuelve con una subconsulta derivada
+        // (MySQL no admite leer la tabla que borra sin ese nivel intermedio) para
+        // que la migración también corra en SQLite, la conexión de los tests.
+        $fichasAConservar = DB::table('product_book_details')
+            ->selectRaw('MIN(id) as id')
+            ->groupBy('product_id');
+
+        DB::table('product_book_details')
+            ->whereNotIn('id', fn ($query) => $query->fromSub($fichasAConservar, 'conservar')->select('id'))
+            ->delete();
 
         Schema::table('product_book_details', function (Blueprint $table) {
             $table->unique('product_id');
