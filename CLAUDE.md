@@ -47,6 +47,7 @@ php artisan route:list
 - Layouts: `layouts/app.blade.php` (autenticado) y `layouts/guest.blade.php`
 - Traducciones en `lang/es/`
 - Rutas web en `routes/web.php`, API en `routes/api.php`
+- **Datos de la tienda en `config/tienda.php`** — nombre, dirección, teléfono, email, coordenadas y horario. Fuente única: los usan el layout de la tienda (JSON-LD, metas geo, footer), la página de contacto, el albarán en PDF y la firma de los emails. Nunca escribir estos datos a mano en una vista
 - Alpine.js stores globales: `$store.notifications` (toasts), `$store.ui` (dark mode, sidebar)
 - Alpine.js components: `dropdown()`, `modal()`, `asyncForm()`
 - Color de marca "brand" definido en `tailwind.config.js` (paleta **teal**, extraída del logo)

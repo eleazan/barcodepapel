@@ -77,7 +77,7 @@ class EmailChannel implements NotificationChannel
             'El pago se realiza en el momento de la entrega. Repartimos nosotros mismos en toda la isla, sin paquetería externa.',
             '',
             'Gracias por comprar en tu librería de barrio.',
-            'Barco de Papel — Ibiza',
+            $this->firma(),
         ]));
 
         return [$subject, $body];
@@ -117,10 +117,23 @@ class EmailChannel implements NotificationChannel
             "Dirección de entrega: {$order->delivery_address}, CP {$order->postal_code}",
             'Total: '.$this->money((float) $order->total),
             '',
-            'Un saludo, Barco de Papel',
+            'Un saludo,',
+            $this->firma(),
         ]);
 
         return [$subject, $body];
+    }
+
+    /**
+     * Firma con los datos de la tienda (config/tienda.php).
+     */
+    private function firma(): string
+    {
+        return implode("\n", [
+            (string) config('tienda.nombre'),
+            config('tienda.direccion.calle').' · '.config('tienda.direccion.codigo_postal').' '.config('tienda.direccion.ciudad'),
+            'Tel. '.config('tienda.telefono.display'),
+        ]);
     }
 
     private function money(float $amount): string
