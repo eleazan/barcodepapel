@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OrderRequest;
+use App\Jobs\Verial\SendOrderToVerialJob;
 use App\Models\Order;
 use App\Models\Product;
 use App\Services\Notifications\OrderNotificationService;
+use App\Services\Verial\VerialClient;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +25,7 @@ class OrderController extends Controller
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->search, fn ($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('order_number', 'like', "%{$s}%")
-                  ->orWhere('customer_name', 'like', "%{$s}%");
+                    ->orWhere('customer_name', 'like', "%{$s}%");
             }))
             ->latest()
             ->paginate(15)
@@ -41,30 +43,30 @@ class OrderController extends Controller
 
     public function store(OrderRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data  = $request->validated();
         $items = $data['items'];
         unset($data['items']);
 
-        $subtotal = 0;
+        $subtotal   = 0;
         $orderItems = [];
 
         foreach ($items as $item) {
-            $product = Product::findOrFail($item['product_id']);
+            $product   = Product::findOrFail($item['product_id']);
             $itemTotal = $product->price * $item['quantity'];
             $subtotal += $itemTotal;
 
             $orderItems[] = [
                 'product_id' => $product->id,
-                'quantity' => $item['quantity'],
+                'quantity'   => $item['quantity'],
                 'unit_price' => $product->price,
-                'total' => $itemTotal,
+                'total'      => $itemTotal,
             ];
 
             $product->decrement('stock', $item['quantity']);
         }
 
         $data['subtotal'] = $subtotal;
-        $data['total'] = $subtotal + ($data['delivery_fee'] ?? 0);
+        $data['total']    = $subtotal + ($data['delivery_fee'] ?? 0);
 
         $order = Order::create($data);
         $order->items()->createMany($orderItems);
@@ -91,7 +93,7 @@ class OrderController extends Controller
 
     public function update(OrderRequest $request, Order $order): RedirectResponse
     {
-        $data = $request->validated();
+        $data  = $request->validated();
         $items = $data['items'];
         unset($data['items']);
 
@@ -100,26 +102,26 @@ class OrderController extends Controller
             $oldItem->product->increment('stock', $oldItem->quantity);
         }
 
-        $subtotal = 0;
+        $subtotal   = 0;
         $orderItems = [];
 
         foreach ($items as $item) {
-            $product = Product::findOrFail($item['product_id']);
+            $product   = Product::findOrFail($item['product_id']);
             $itemTotal = $product->price * $item['quantity'];
             $subtotal += $itemTotal;
 
             $orderItems[] = [
                 'product_id' => $product->id,
-                'quantity' => $item['quantity'],
+                'quantity'   => $item['quantity'],
                 'unit_price' => $product->price,
-                'total' => $itemTotal,
+                'total'      => $itemTotal,
             ];
 
             $product->decrement('stock', $item['quantity']);
         }
 
         $data['subtotal'] = $subtotal;
-        $data['total'] = $subtotal + ($data['delivery_fee'] ?? 0);
+        $data['total']    = $subtotal + ($data['delivery_fee'] ?? 0);
 
         $order->update($data);
         $order->items()->delete();
@@ -130,10 +132,14 @@ class OrderController extends Controller
             ->with('success', 'Pedido actualizado correctamente.');
     }
 
-    public function updateStatus(Request $request, Order $order, OrderNotificationService $notificationService): RedirectResponse
-    {
+    public function updateStatus(
+        Request $request,
+        Order $order,
+        OrderNotificationService $notificationService,
+        VerialClient $verial,
+    ): RedirectResponse {
         $request->validate([
-            'status' => ['required', 'in:' . implode(',', array_keys(Order::STATUSES))],
+            'status' => ['required', 'in:'.implode(',', array_keys(Order::STATUSES))],
         ]);
 
         $previousStatus = $order->status;
@@ -143,9 +149,40 @@ class OrderController extends Controller
             $notificationService->sendAll($order, context: [
                 'previous_status' => $previousStatus,
             ]);
+
+            $this->enviarAVerialSiProcede($order, $verial);
         }
 
         return back()->with('success', 'Estado del pedido actualizado.');
+    }
+
+    /**
+     * Al marcar el pedido como preparado entra en el ERP. Si Verial no está
+     * configurado no se hace nada: el pedido queda sin verial_enviado_at y lo
+     * recogerá `verial:send-pending-orders` cuando el ERP esté disponible.
+     */
+    private function enviarAVerialSiProcede(Order $order, VerialClient $verial): void
+    {
+        $estadosEnviables = [
+            Order::STATUS_PREPARADO,
+            Order::STATUS_EN_REPARTO,
+            Order::STATUS_ENTREGADO,
+        ];
+
+        if (! in_array($order->status, $estadosEnviables, true)) {
+            return;
+        }
+
+        // Ya está en Verial: no lo duplicamos.
+        if ($order->verial_enviado_at !== null) {
+            return;
+        }
+
+        if (! $verial->isConfigured()) {
+            return;
+        }
+
+        SendOrderToVerialJob::dispatch($order);
     }
 
     public function pdf(Order $order): Response

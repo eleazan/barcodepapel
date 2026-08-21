@@ -108,6 +108,68 @@
                         @endif
                     </div>
 
+                    {{-- Añadir al carrito --}}
+                    @if ($product->hasStock())
+                        <form method="POST" action="{{ route('cart.add', $product) }}" class="mb-8" x-data="{ cantidad: 1, max: {{ min($product->stock, 99) }}, enviando: false }" @submit="enviando = true">
+                            @csrf
+
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <div class="flex items-center rounded-full border border-gray-200 overflow-hidden self-start">
+                                    <button
+                                        type="button"
+                                        @click="cantidad = Math.max(1, cantidad - 1)"
+                                        :disabled="cantidad <= 1"
+                                        class="px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-40"
+                                        aria-label="Quitar una unidad"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                                    </button>
+
+                                    <label for="cantidad" class="sr-only">Cantidad</label>
+                                    <input
+                                        id="cantidad"
+                                        type="number"
+                                        name="quantity"
+                                        x-model.number="cantidad"
+                                        min="1"
+                                        max="{{ min($product->stock, 99) }}"
+                                        class="w-14 text-center text-sm font-medium border-0 focus:ring-0 focus:outline-none"
+                                    >
+
+                                    <button
+                                        type="button"
+                                        @click="cantidad = Math.min(max, cantidad + 1)"
+                                        :disabled="cantidad >= max"
+                                        class="px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-40"
+                                        aria-label="Añadir una unidad"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    </button>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    :disabled="enviando"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-600 text-white font-medium rounded-full hover:bg-brand-700 transition-all hover:shadow-lg hover:shadow-brand-600/25 disabled:opacity-60"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    <span x-show="! enviando">Añadir al carrito</span>
+                                    <span x-show="enviando" x-cloak>Añadiendo&hellip;</span>
+                                </button>
+                            </div>
+
+                            <a href="{{ route('cart.index') }}" class="inline-block mt-3 text-sm text-brand-700 hover:text-brand-800 underline">Ver mi carrito</a>
+                        </form>
+                    @else
+                        <div class="mb-8 p-5 rounded-2xl bg-gray-50 border border-gray-200">
+                            <p class="text-sm text-gray-600 mb-3">Este producto está agotado ahora mismo.</p>
+                            <a href="{{ route('contact') }}" class="inline-flex items-center gap-2 text-sm font-medium text-brand-700 hover:text-brand-800">
+                                Pregúntanos si podemos conseguirlo
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                            </a>
+                        </div>
+                    @endif
+
                     {{-- Description --}}
                     @if ($product->description)
                         <div class="prose prose-sm prose-gray max-w-none mb-8">

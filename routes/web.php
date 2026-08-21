@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DeliveryZoneController;
+use App\Http\Controllers\Admin\NotificationLogController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PostController as AdminPostController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\VerialSyncController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -10,15 +18,9 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\DeliveryZoneController;
-use App\Http\Controllers\Admin\NotificationLogController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\PostController as AdminPostController;
-use App\Http\Controllers\Admin\VerialSyncController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SitemapController;
@@ -105,6 +107,30 @@ Route::get('/contacto', [StoreController::class, 'contact'])->name('contact');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+
+/*
+|--------------------------------------------------------------------------
+| Carrito y checkout
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('carrito')->name('cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('index');
+    Route::post('/{product}', [CartController::class, 'add'])->name('add');
+    Route::patch('/{product}', [CartController::class, 'update'])->name('update');
+    Route::delete('/{product}', [CartController::class, 'remove'])->name('remove');
+    Route::delete('/', [CartController::class, 'clear'])->name('clear');
+});
+
+Route::get('/comprobar-codigo-postal', [CartController::class, 'checkPostalCode'])
+    ->name('delivery.check');
+
+Route::get('/finalizar-pedido', [CheckoutController::class, 'show'])->name('checkout.show');
+Route::post('/finalizar-pedido', [CheckoutController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('checkout.store');
+Route::get('/pedido/{orderNumber}', [CheckoutController::class, 'confirmation'])
+    ->name('checkout.confirmation');
 
 /*
 |--------------------------------------------------------------------------
