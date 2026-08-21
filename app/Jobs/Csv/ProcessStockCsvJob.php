@@ -25,13 +25,13 @@ class ProcessStockCsvJob implements ShouldQueue
 
     // Formato: 7 líneas de cabecera, separador ;, encoding CP1252
     // Col 0: Ficha | Col 2: Nombre | Col 4: Barras | Col 7: Stock
-    private const SKIP_LINES    = 7;
-    private const COL_FICHA     = 0;
-    private const COL_NOMBRE    = 2;
-    private const COL_BARRAS    = 4;
-    private const COL_STOCK     = 7;
-    private const MIN_COLS      = 8;
-    private const ENCODING      = 'CP1252';
+    private const SKIP_LINES = 7;
+    private const COL_FICHA  = 0;
+    private const COL_NOMBRE = 2;
+    private const COL_BARRAS = 4;
+    private const COL_STOCK  = 7;
+    private const MIN_COLS   = 8;
+    private const ENCODING   = 'CP1252';
 
     public function __construct(
         private readonly string $storagePath,
@@ -44,12 +44,14 @@ class ProcessStockCsvJob implements ShouldQueue
 
         if (! file_exists($absolutePath)) {
             Log::error("ProcessStockCsvJob: archivo no encontrado: {$absolutePath}");
+
             return;
         }
 
         $handle = fopen($absolutePath, 'r');
         if (! $handle) {
             Log::error("ProcessStockCsvJob: no se pudo abrir: {$absolutePath}");
+
             return;
         }
 
@@ -94,7 +96,7 @@ class ProcessStockCsvJob implements ShouldQueue
 
                     $slug = Str::slug($nombre);
                     if (Product::where('slug', $slug)->exists()) {
-                        $slug .= '-' . ($barcode ?: $ficha);
+                        $slug .= '-'.($barcode ?: $ficha);
                     }
 
                     Product::create([
@@ -124,7 +126,7 @@ class ProcessStockCsvJob implements ShouldQueue
             entityType: 'producto',
             entityId: null,
             operation: 'import_stock_csv',
-            verialMethod: 'CSV:' . $this->originalName,
+            verialMethod: 'CSV:'.$this->originalName,
             response: [
                 'actualizados' => $actualizados,
                 'creados'      => $creados,
