@@ -57,8 +57,10 @@ COPY --chown=www-data:www-data . .
 # Copy compiled frontend assets from node-build
 COPY --from=node-build --chown=www-data:www-data /app/public/build ./public/build
 
+# Sin config:cache: en build las variables de entorno reales todavía no
+# existen y quedarían congeladas en el caché (APP_ENV=local, DB vacía...).
+# La imagen ya lo hace en cada arranque vía AUTORUN_LARAVEL_CONFIG_CACHE.
 RUN composer dump-autoload --optimize --no-dev \
-    && php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
 

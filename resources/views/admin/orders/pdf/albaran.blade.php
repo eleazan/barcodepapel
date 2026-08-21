@@ -65,8 +65,9 @@
         {{-- Header --}}
         <div class="header">
             <div class="header-left">
-                <div class="logo">BarcodePapel</div>
-                <div class="logo-sub">Librería &middot; Eivissa, Ibiza</div>
+                <div class="logo">{{ config('tienda.nombre') }}</div>
+                <div class="logo-sub">{{ config('tienda.direccion.calle') }} &middot; {{ config('tienda.direccion.codigo_postal') }} {{ config('tienda.direccion.ciudad') }}, {{ config('tienda.direccion.provincia') }}</div>
+                <div class="logo-sub">Tel. {{ config('tienda.telefono.display') }}</div>
             </div>
             <div class="header-right">
                 <div class="order-number">{{ $order->order_number }}</div>
@@ -149,7 +150,7 @@
 
         {{-- Footer --}}
         <div class="footer">
-            Documento generado el {{ now()->format('d/m/Y H:i') }} &middot; BarcodePapel &middot; Eivissa, Ibiza
+            Documento generado el {{ now()->format('d/m/Y H:i') }} &middot; {{ config('tienda.nombre') }} &middot; {{ config('tienda.direccion.ciudad') }}, Ibiza
         </div>
 
     </div>

@@ -1,5 +1,19 @@
 @props(['title' => null, 'description' => null, 'canonical' => null, 'noindex' => false])
 
+@php
+    $tienda = config('tienda');
+
+    // Tramos con apertura, para el JSON-LD y el footer (los cerrados no se publican)
+    $tramosAbiertos = collect($tienda['horario'])->filter(fn (array $tramo) => $tramo['abre'] !== null)->values();
+
+    $horarioLd = $tramosAbiertos->map(fn (array $tramo) => [
+        '@type' => 'OpeningHoursSpecification',
+        'dayOfWeek' => $tramo['dias'],
+        'opens' => $tramo['abre'],
+        'closes' => $tramo['cierra'],
+    ]);
+@endphp
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -21,7 +35,8 @@
     {{-- Geo --}}
     <meta name="geo.region" content="ES-IB">
     <meta name="geo.placename" content="Ibiza, Islas Baleares">
-    <meta name="geo.position" content="38.9067;1.4206">
+    <meta name="geo.position" content="{{ $tienda['geo']['latitud'] }};{{ $tienda['geo']['longitud'] }}">
+    <meta name="ICBM" content="{{ $tienda['geo']['latitud'] }}, {{ $tienda['geo']['longitud'] }}">
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
@@ -60,24 +75,24 @@
         "@@context": "https://schema.org",
         "@type": ["BookStore", "LocalBusiness"],
         "@id": "{{ url('/') }}#business",
-        "name": "Barco de Papel",
+        "name": @json($tienda['nombre']),
         "description": "Librería y papelería en Ibiza con catálogo de libros, cuadernos, material escolar, arte, oficina y mochilas. Reparto a domicilio en toda la isla.",
         "url": "{{ url('/') }}",
         "image": "{{ asset('og-image.jpg') }}",
-        "telephone": "+34 971 000 000",
-        "email": "info@barcodepapel.es",
+        "telephone": @json($tienda['telefono']['enlace']),
+        "email": @json($tienda['email']),
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Carrer de l'Exemple, 1",
-            "addressLocality": "Eivissa",
-            "addressRegion": "Illes Balears",
-            "postalCode": "07800",
-            "addressCountry": "ES"
+            "streetAddress": @json($tienda['direccion']['calle']),
+            "addressLocality": @json($tienda['direccion']['ciudad']),
+            "addressRegion": @json($tienda['direccion']['provincia']),
+            "postalCode": @json($tienda['direccion']['codigo_postal']),
+            "addressCountry": @json($tienda['direccion']['pais_codigo'])
         },
         "geo": {
             "@type": "GeoCoordinates",
-            "latitude": 38.9067,
-            "longitude": 1.4206
+            "latitude": {{ $tienda['geo']['latitud'] }},
+            "longitude": {{ $tienda['geo']['longitud'] }}
         },
         "areaServed": {
             "@type": "Place",
@@ -90,20 +105,7 @@
         "priceRange": "€€",
         "currenciesAccepted": "EUR",
         "paymentAccepted": "Efectivo, Tarjeta",
-        "openingHoursSpecification": [
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"],
-                "opens": "09:30",
-                "closes": "20:00"
-            },
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": "Saturday",
-                "opens": "10:00",
-                "closes": "14:00"
-            }
-        ],
+        "openingHoursSpecification": @json($horarioLd),
         "hasOfferCatalog": {
             "@type": "OfferCatalog",
             "name": "Catálogo de libros y papelería",
@@ -279,23 +281,24 @@
                     <ul class="space-y-3 text-sm text-gray-300">
                         <li class="flex items-start gap-2">
                             <svg class="w-4 h-4 text-brand-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            Carrer de l'Exemple, 1<br>07800 Eivissa
+                            {{ $tienda['direccion']['calle'] }}<br>{{ $tienda['direccion']['codigo_postal'] }} {{ $tienda['direccion']['ciudad'] }}
                         </li>
                         <li class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-brand-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                            +34 971 000 000
+                            <a href="tel:{{ $tienda['telefono']['enlace'] }}" class="hover:text-white transition-colors">{{ $tienda['telefono']['display'] }}</a>
                         </li>
                         <li class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-brand-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            info@barcodepapel.es
+                            <a href="mailto:{{ $tienda['email'] }}" class="hover:text-white transition-colors">{{ $tienda['email'] }}</a>
                         </li>
                     </ul>
 
                     {{-- Horario --}}
                     <div class="mt-5 pt-4 border-t border-gray-800">
                         <p class="text-xs text-gray-300 uppercase tracking-wider mb-2 font-medium">Horario</p>
-                        <p class="text-sm text-gray-300">Lun–Vie: 09:30–20:00</p>
-                        <p class="text-sm text-gray-300">S&aacute;bado: 10:00–14:00</p>
+                        @foreach ($tramosAbiertos as $tramo)
+                            <p class="text-sm text-gray-300">{{ $tramo['etiqueta_corta'] }}: {{ $tramo['abre'] }}–{{ $tramo['cierra'] }}</p>
+                        @endforeach
                     </div>
                 </div>
             </div>
