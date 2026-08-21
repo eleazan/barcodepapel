@@ -25,13 +25,13 @@ class ProcessPricesCsvJob implements ShouldQueue
 
     // Formato: 4 líneas de cabecera, separador ;, encoding Latin-1/CP1252
     // Col 0: Ficha | Col 2: Nombre | Col 3: Barras | Col 4: Precio base
-    private const SKIP_LINES    = 4;
-    private const COL_FICHA     = 0;
-    private const COL_NOMBRE    = 2;
-    private const COL_BARRAS    = 3;
-    private const COL_PRECIO    = 4;
-    private const MIN_COLS      = 5;
-    private const ENCODING      = 'CP1252';
+    private const SKIP_LINES = 4;
+    private const COL_FICHA  = 0;
+    private const COL_NOMBRE = 2;
+    private const COL_BARRAS = 3;
+    private const COL_PRECIO = 4;
+    private const MIN_COLS   = 5;
+    private const ENCODING   = 'CP1252';
 
     public function __construct(
         private readonly string $storagePath,
@@ -44,12 +44,14 @@ class ProcessPricesCsvJob implements ShouldQueue
 
         if (! file_exists($absolutePath)) {
             Log::error("ProcessPricesCsvJob: archivo no encontrado: {$absolutePath}");
+
             return;
         }
 
         $handle = fopen($absolutePath, 'r');
         if (! $handle) {
             Log::error("ProcessPricesCsvJob: no se pudo abrir: {$absolutePath}");
+
             return;
         }
 
@@ -62,11 +64,11 @@ class ProcessPricesCsvJob implements ShouldQueue
             ['name' => 'Libros', 'is_active' => true, 'sort_order' => 0],
         );
 
-        $actualizados   = 0;
-        $creados        = 0;
-        $activados      = 0;
-        $omitidos       = 0;
-        $errores        = 0;
+        $actualizados = 0;
+        $creados      = 0;
+        $activados    = 0;
+        $omitidos     = 0;
+        $errores      = 0;
 
         while (($cols = fgetcsv($handle, 0, ';')) !== false) {
             if (count($cols) < self::MIN_COLS || empty(trim($cols[self::COL_FICHA]))) {
@@ -93,7 +95,7 @@ class ProcessPricesCsvJob implements ShouldQueue
                 $product = $this->findProduct($ficha, $barcode);
 
                 if ($product) {
-                    $wasInactive = ! $product->is_active;
+                    $wasInactive    = ! $product->is_active;
                     $shouldActivate = $wasInactive && $product->stock > 0;
 
                     $product->update([
@@ -111,7 +113,7 @@ class ProcessPricesCsvJob implements ShouldQueue
 
                     $slug = Str::slug($nombre);
                     if (Product::where('slug', $slug)->exists()) {
-                        $slug .= '-' . ($barcode ?: $ficha);
+                        $slug .= '-'.($barcode ?: $ficha);
                     }
 
                     Product::create([
@@ -141,7 +143,7 @@ class ProcessPricesCsvJob implements ShouldQueue
             entityType: 'producto',
             entityId: null,
             operation: 'import_prices_csv',
-            verialMethod: 'CSV:' . $this->originalName,
+            verialMethod: 'CSV:'.$this->originalName,
             response: [
                 'actualizados' => $actualizados,
                 'creados'      => $creados,

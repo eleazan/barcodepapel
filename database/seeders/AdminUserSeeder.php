@@ -17,6 +17,7 @@ class AdminUserSeeder extends Seeder
 
         if (! $password) {
             $this->command->error('Define ADMIN_PASSWORD en .env antes de ejecutar este seeder.');
+
             return;
         }
 
