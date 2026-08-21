@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UploadCsvRequest;
+use App\Jobs\Csv\ProcessPricesCsvJob;
+use App\Jobs\Csv\ProcessStockCsvJob;
 use App\Models\Product;
 use App\Models\VerialSyncLog;
 use App\Services\Verial\VerialClient;
@@ -92,5 +95,27 @@ class VerialSyncController extends Controller
 
         return redirect()->route('admin.verial.index')
             ->with('success', 'Estado de pedidos actualizado desde Verial.');
+    }
+
+    public function uploadStockCsv(UploadCsvRequest $request): RedirectResponse
+    {
+        $file = $request->file('csv');
+        $path = $file->store('csv-imports');
+
+        ProcessStockCsvJob::dispatch($path, $file->getClientOriginalName());
+
+        return redirect()->route('admin.verial.index')
+            ->with('success', 'CSV de stock enviado a la cola. El stock se actualizará en breve.');
+    }
+
+    public function uploadPricesCsv(UploadCsvRequest $request): RedirectResponse
+    {
+        $file = $request->file('csv');
+        $path = $file->store('csv-imports');
+
+        ProcessPricesCsvJob::dispatch($path, $file->getClientOriginalName());
+
+        return redirect()->route('admin.verial.index')
+            ->with('success', 'CSV de precios enviado a la cola. Los precios se actualizarán en breve.');
     }
 }

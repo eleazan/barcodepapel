@@ -162,4 +162,6 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('verial/sync-images', [VerialSyncController::class, 'syncImages'])->name('verial.sync-images');
     Route::post('verial/send-orders', [VerialSyncController::class, 'sendPendingOrders'])->name('verial.send-orders');
     Route::post('verial/sync-order-status', [VerialSyncController::class, 'syncOrderStatus'])->name('verial.sync-order-status');
+    Route::post('verial/upload-stock', [VerialSyncController::class, 'uploadStockCsv'])->name('verial.upload-stock');
+    Route::post('verial/upload-prices', [VerialSyncController::class, 'uploadPricesCsv'])->name('verial.upload-prices');
 });

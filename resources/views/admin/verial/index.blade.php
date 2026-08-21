@@ -155,6 +155,99 @@
             </x-admin.card>
         @endif
 
+        {{-- Importación manual por CSV --}}
+        <x-admin.card>
+            <x-slot:title>Importar desde CSV de Verial</x-slot:title>
+
+            <p class="text-sm text-gray-500 mb-5">
+                Útil cuando el conector API no está disponible. Exporta desde Verial el
+                <strong>listado de stock</strong> y el <strong>listado de tarifas</strong> y súbelos aquí.
+                Cada archivo se procesa en segundo plano; el resultado aparece en el registro inferior.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                {{-- CSV de Stock --}}
+                <div class="rounded-xl border border-green-200 bg-green-50 p-5">
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <h3 class="font-semibold text-green-900">CSV de Stock</h3>
+                    </div>
+                    <p class="text-xs text-green-700 mb-4">
+                        «Listado con el stock actual para hacer recuento» — actualiza el campo
+                        <code class="bg-green-100 px-1 rounded font-mono">stock</code> de cada producto.
+                        Crea el producto como inactivo si no existe aún.
+                    </p>
+                    <form method="POST" action="{{ route('admin.verial.upload-stock') }}"
+                          enctype="multipart/form-data" class="space-y-3">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-medium text-green-800 mb-1">
+                                Archivo CSV (máx. 20 MB)
+                            </label>
+                            <input type="file" name="csv" accept=".csv,.txt"
+                                   class="block w-full text-sm text-gray-600
+                                          file:mr-3 file:py-1.5 file:px-3
+                                          file:rounded-lg file:border-0
+                                          file:text-xs file:font-medium
+                                          file:bg-green-600 file:text-white
+                                          hover:file:bg-green-700 cursor-pointer">
+                            @error('csv')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button type="submit"
+                                class="w-full py-2 px-4 bg-green-600 hover:bg-green-700
+                                       text-white text-sm font-medium rounded-lg transition-colors">
+                            Subir y procesar stock
+                        </button>
+                    </form>
+                </div>
+
+                {{-- CSV de Precios --}}
+                <div class="rounded-xl border border-blue-200 bg-blue-50 p-5">
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <h3 class="font-semibold text-blue-900">CSV de Precios</h3>
+                    </div>
+                    <p class="text-xs text-blue-700 mb-4">
+                        «Listado de tarifas» — actualiza el campo
+                        <code class="bg-blue-100 px-1 rounded font-mono">price</code> de cada producto.
+                        Activa automáticamente los productos que tengan stock y precio mayor que 0.
+                    </p>
+                    <form method="POST" action="{{ route('admin.verial.upload-prices') }}"
+                          enctype="multipart/form-data" class="space-y-3">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-medium text-blue-800 mb-1">
+                                Archivo CSV (máx. 20 MB)
+                            </label>
+                            <input type="file" name="csv" accept=".csv,.txt"
+                                   class="block w-full text-sm text-gray-600
+                                          file:mr-3 file:py-1.5 file:px-3
+                                          file:rounded-lg file:border-0
+                                          file:text-xs file:font-medium
+                                          file:bg-blue-600 file:text-white
+                                          hover:file:bg-blue-700 cursor-pointer">
+                            @error('csv')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button type="submit"
+                                class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700
+                                       text-white text-sm font-medium rounded-lg transition-colors">
+                            Subir y procesar precios
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </x-admin.card>
+
         {{-- Tabla de logs recientes --}}
         <x-admin.card>
             <x-slot:title>Registro de sincronizaciones recientes</x-slot:title>
