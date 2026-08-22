@@ -95,7 +95,10 @@
     <h2>8. Entrega</h2>
 
     <ul>
-        <li>El plazo habitual de entrega es de <strong>24 a 48 horas laborables</strong> desde la confirmaci&oacute;n del pedido, salvo productos bajo pedido a editorial, de los que te informaremos.</li>
+        <li>Cada zona tiene sus <strong>d&iacute;as de reparto</strong>: en unas repartimos cualquier d&iacute;a de apertura y en otras un d&iacute;a fijo de la semana. Puedes consultarlos en la p&aacute;gina de <a href="{{ route('delivery') }}">zonas de reparto</a>.</li>
+        <li>Al finalizar el pedido te indicamos la <strong>fecha prevista de entrega</strong>, que es el primer d&iacute;a de reparto de tu zona contando desde el d&iacute;a siguiente al pedido y descontando festivos y d&iacute;as de cierre. Esa fecha queda recogida en la confirmaci&oacute;n y en el albar&aacute;n.</li>
+        <li>Los <strong>festivos y cierres por vacaciones</strong> est&aacute;n publicados en la p&aacute;gina de <a href="{{ route('delivery') }}">zonas de reparto</a>. Si tu entrega cae en uno de ellos, pasa al siguiente d&iacute;a de reparto de tu zona.</li>
+        <li>La fecha prevista es una estimaci&oacute;n de buena fe. Si un producto viene bajo pedido a editorial o surge una incidencia, te avisamos por tel&eacute;fono y acordamos una nueva fecha.</li>
         <li>La entrega se realiza en la direcci&oacute;n que hayas indicado. Es importante que el tel&eacute;fono facilitado est&eacute; operativo.</li>
         <li>Si no hay nadie en el momento acordado, te llamamos para fijar un nuevo intento sin coste adicional.</li>
         <li>El riesgo de p&eacute;rdida o deterioro de los productos se transmite en el momento de la entrega.</li>

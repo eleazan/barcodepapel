@@ -80,18 +80,21 @@ class PlaceOrderService
 
             $deliveryFee = (float) $zone->delivery_fee;
 
+            // La fecha prevista sale de los días de reparto de la zona: el día
+            // que se le anuncia al cliente queda registrado con el pedido.
             $order = Order::create([
-                'user_id'          => $userId,
-                'customer_name'    => $data['customer_name'],
-                'customer_email'   => $data['customer_email'] ?? null,
-                'customer_phone'   => $data['customer_phone'],
-                'delivery_address' => $data['delivery_address'],
-                'postal_code'      => $zone->postal_code,
-                'status'           => Order::STATUS_PENDIENTE,
-                'subtotal'         => round($subtotal, 2),
-                'delivery_fee'     => $deliveryFee,
-                'total'            => round($subtotal + $deliveryFee, 2),
-                'notes'            => $data['notes'] ?? null,
+                'user_id'                 => $userId,
+                'customer_name'           => $data['customer_name'],
+                'customer_email'          => $data['customer_email'] ?? null,
+                'customer_phone'          => $data['customer_phone'],
+                'delivery_address'        => $data['delivery_address'],
+                'postal_code'             => $zone->postal_code,
+                'status'                  => Order::STATUS_PENDIENTE,
+                'subtotal'                => round($subtotal, 2),
+                'delivery_fee'            => $deliveryFee,
+                'total'                   => round($subtotal + $deliveryFee, 2),
+                'estimated_delivery_date' => $zone->nextDeliveryDate(),
+                'notes'                   => $data['notes'] ?? null,
             ]);
 
             $order->items()->createMany($orderItems);

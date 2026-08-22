@@ -76,6 +76,12 @@
                         <dt class="text-gray-500 w-28 shrink-0">Direcci&oacute;n</dt>
                         <dd class="text-gray-900">{{ $order->delivery_address }}<br>CP {{ $order->postal_code }}</dd>
                     </div>
+                    @if ($order->formattedEstimatedDelivery())
+                        <div class="flex gap-3">
+                            <dt class="text-gray-500 w-28 shrink-0">Fecha prevista</dt>
+                            <dd class="text-gray-900 font-medium first-letter:uppercase">{{ $order->formattedEstimatedDelivery() }}</dd>
+                        </div>
+                    @endif
                     <div class="flex gap-3">
                         <dt class="text-gray-500 w-28 shrink-0">Tel&eacute;fono</dt>
                         <dd class="text-gray-900">{{ $order->customer_phone }}</dd>

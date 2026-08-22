@@ -162,13 +162,22 @@
 
                                     {{-- Resultado de la comprobación en vivo --}}
                                     <template x-if="estado === 'ok'">
-                                        <p class="mt-2 text-sm text-emerald-700 flex items-center gap-1.5">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            <span>
-                                                Repartimos aqu&iacute;<span x-show="zona" x-cloak> (<span x-text="zona"></span>)</span>.
-                                                Gastos: <strong x-text="gastos"></strong>
-                                            </span>
-                                        </p>
+                                        <div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                                            <p class="text-sm text-emerald-800 flex items-start gap-1.5">
+                                                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>
+                                                    Repartimos aqu&iacute;<span x-show="zona" x-cloak> (<span x-text="zona"></span>)</span>.
+                                                    Gastos: <strong x-text="gastos"></strong>
+                                                </span>
+                                            </p>
+                                            <p class="mt-2 pl-6 text-sm text-emerald-800" x-show="proximaEntrega" x-cloak>
+                                                Te lo llevamos el <strong x-text="proximaEntrega"></strong>.
+                                            </p>
+                                            <p class="mt-1 pl-6 text-xs text-emerald-700" x-show="diasReparto" x-cloak>
+                                                En esta zona repartimos <span x-text="diasReparto"></span>.
+                                                <span x-show="motivoRetraso" x-cloak><span x-text="motivoRetraso"></span>, as&iacute; que pasa al siguiente d&iacute;a de reparto.</span>
+                                            </p>
+                                        </div>
                                     </template>
                                     <template x-if="estado === 'fuera'">
                                         <p class="mt-2 text-sm text-red-600 flex items-center gap-1.5">
@@ -279,6 +288,17 @@
                                     <dd class="font-medium text-gray-900">
                                         <span x-show="estado === 'ok'" x-text="gastos" x-cloak></span>
                                         <span x-show="estado !== 'ok'" class="text-gray-400 font-normal">Seg&uacute;n c&oacute;digo postal</span>
+                                    </dd>
+                                </div>
+                                <div class="flex items-start justify-between gap-3">
+                                    <dt class="text-gray-500 shrink-0">Entrega</dt>
+                                    <dd class="text-right">
+                                        <template x-if="estado === 'ok' && proximaEntrega">
+                                            <span class="font-medium text-gray-900" x-text="proximaEntrega"></span>
+                                        </template>
+                                        <template x-if="estado !== 'ok' || ! proximaEntrega">
+                                            <span class="text-gray-400">Seg&uacute;n c&oacute;digo postal</span>
+                                        </template>
                                     </dd>
                                 </div>
                                 <div class="flex items-center justify-between pt-3 border-t border-gray-100">

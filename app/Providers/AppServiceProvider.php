@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Listeners\RegisterClientInVerial;
 use App\Services\Cart\Cart;
+use App\Services\Delivery\DeliveryCalendar;
 use App\Services\Notifications\Channels\EmailChannel;
 use App\Services\Notifications\OrderNotificationService;
 use App\Services\Verial\VerialClient;
@@ -35,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
         // El carrito vive en la sesión: una sola instancia por petición para que
         // controladores, vistas y componentes vean el mismo estado reconciliado.
         $this->app->scoped(Cart::class);
+
+        // Los festivos y cierres se leen una sola vez por petición.
+        $this->app->scoped(DeliveryCalendar::class);
 
         $this->app->singleton(VerialClient::class, function () {
             $cfg = config('verial');

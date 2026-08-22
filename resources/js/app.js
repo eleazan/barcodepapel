@@ -129,6 +129,9 @@ const postalChecker = (endpoint, cpInicial = '') => ({
     gastos: null,       // importe formateado devuelto por el servidor
     gastosValor: null,  // importe numerico, para calcular el total
     zona: null,
+    diasReparto: null,  // "jueves", "de lunes a sabado"...
+    proximaEntrega: null,
+    motivoRetraso: null, // festivo o cierre que ha desplazado la entrega
 
     init() {
         if (this.cp) {
@@ -141,6 +144,9 @@ const postalChecker = (endpoint, cpInicial = '') => ({
             this.estado = this.cp ? 'invalido' : null;
             this.gastos = null;
             this.gastosValor = null;
+            this.diasReparto = null;
+            this.proximaEntrega = null;
+            this.motivoRetraso = null;
             return;
         }
 
@@ -160,10 +166,16 @@ const postalChecker = (endpoint, cpInicial = '') => ({
             this.gastos = data.gastos_envio_formateado;
             this.gastosValor = data.gastos_envio;
             this.zona = data.zona;
+            this.diasReparto = data.dias_reparto;
+            this.proximaEntrega = data.proxima_entrega_texto;
+            this.motivoRetraso = data.motivo_retraso;
         } catch (error) {
             this.estado = 'error';
             this.gastos = null;
             this.gastosValor = null;
+            this.diasReparto = null;
+            this.proximaEntrega = null;
+            this.motivoRetraso = null;
         } finally {
             this.cargando = false;
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
+use App\Http\Controllers\Admin\NonWorkingDayController;
 use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
@@ -158,6 +159,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('orders/{order}/pdf', [OrderController::class, 'pdf'])->name('orders.pdf');
     Route::resource('delivery-zones', DeliveryZoneController::class)->except('show');
+    Route::resource('non-working-days', NonWorkingDayController::class)->except('show');
     Route::resource('posts', AdminPostController::class)->except('show');
 
     // Notifications

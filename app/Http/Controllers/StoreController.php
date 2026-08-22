@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\DeliveryZone;
 use App\Models\Product;
+use App\Services\Delivery\DeliveryCalendar;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -21,7 +22,7 @@ class StoreController extends Controller
             ->when($request->categoria, fn ($q, $slug) => $q->whereHas('category', fn ($q) => $q->where('slug', $slug)))
             ->when($request->buscar, fn ($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('name', 'like', "%{$s}%")
-                  ->orWhere('description', 'like', "%{$s}%");
+                    ->orWhere('description', 'like', "%{$s}%");
             }))
             ->when($request->orden === 'precio_asc', fn ($q) => $q->orderBy('price'))
             ->when($request->orden === 'precio_desc', fn ($q) => $q->orderByDesc('price'))
@@ -53,7 +54,7 @@ class StoreController extends Controller
         return view('store.product', compact('product', 'related'));
     }
 
-    public function delivery(): View
+    public function delivery(DeliveryCalendar $calendar): View
     {
         $zones = DeliveryZone::active()
             ->orderBy('city')
@@ -61,7 +62,10 @@ class StoreController extends Controller
             ->get()
             ->groupBy('city');
 
-        return view('store.delivery', compact('zones'));
+        return view('store.delivery', [
+            'zones'   => $zones,
+            'cierres' => $calendar->upcomingClosures(6),
+        ]);
     }
 
     public function contact(): View

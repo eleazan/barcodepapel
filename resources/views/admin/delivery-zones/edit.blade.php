@@ -18,7 +18,7 @@
                 </div>
 
                 <div>
-                    <label for="neighborhood" class="form-label">Colonia</label>
+                    <label for="neighborhood" class="form-label">Barrio</label>
                     <input type="text" name="neighborhood" id="neighborhood" value="{{ old('neighborhood', $zone->neighborhood) }}" class="form-input">
                     @error('neighborhood') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
@@ -28,6 +28,8 @@
                     <input type="text" name="city" id="city" value="{{ old('city', $zone->city) }}" class="form-input">
                     @error('city') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
+
+                <x-admin.delivery-days :selected="old('delivery_days', $zone->configuredDays())" />
 
                 <div class="flex items-center">
                     <label class="flex items-center gap-2 cursor-pointer">

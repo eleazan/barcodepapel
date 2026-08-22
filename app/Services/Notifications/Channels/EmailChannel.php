@@ -64,6 +64,7 @@ class EmailChannel implements NotificationChannel
             "¡Hola, {$order->customer_name}!",
             '',
             "Hemos recibido tu pedido {$order->order_number}. Lo estamos revisando y te avisaremos cuando esté preparado para el reparto.",
+            ...$this->fechaPrevista($order),
             '',
             'Detalle del pedido:',
         ], $lineas, [
@@ -122,6 +123,22 @@ class EmailChannel implements NotificationChannel
         ]);
 
         return [$subject, $body];
+    }
+
+    /**
+     * Día de reparto anunciado al confirmar el pedido, si la zona tiene uno.
+     *
+     * @return list<string>
+     */
+    private function fechaPrevista(Order $order): array
+    {
+        $fecha = $order->formattedEstimatedDelivery();
+
+        if ($fecha === null) {
+            return [];
+        }
+
+        return ['', "Según los días de reparto de tu zona, te lo llevamos el {$fecha}."];
     }
 
     /**

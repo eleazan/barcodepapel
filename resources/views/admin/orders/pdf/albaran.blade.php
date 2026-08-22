@@ -96,6 +96,12 @@
                 <h3>Dirección de entrega</h3>
                 <p>{{ $order->delivery_address }}</p>
                 <p>CP: {{ $order->postal_code }}</p>
+                @if ($order->formattedEstimatedDelivery())
+                    <p style="margin-top: 4px;">
+                        <span class="label">Fecha prevista:</span>
+                        <strong style="text-transform: capitalize;">{{ $order->formattedEstimatedDelivery() }}</strong>
+                    </p>
+                @endif
             </div>
         </div>
 

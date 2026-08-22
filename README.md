@@ -1,387 +1,170 @@
-# BarcodePapel
+# Barco de Papel
 
-Laravel 13 application with Alpine.js, Tailwind CSS, and Blade. Designed to be deployed on Coolify (self-hosted PaaS).
+Tienda web de **Barco de Papel**, una librería de Ibiza (Eivissa). Muestra el
+catálogo completo, acepta pedidos y los reparte la propia librería: no hay
+paquetería externa ni pasarela de pago, se cobra en la entrega.
 
-## Stack
+El catálogo y el stock se sincronizan con **Verial**, el ERP de la librería.
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Laravel 13, PHP 8.3+ |
-| Frontend | Alpine.js 3, Tailwind CSS 3, Blade |
-| Database | MySQL 8+ or PostgreSQL 16+ |
+| Capa | Tecnología |
+|------|-----------|
+| Backend | Laravel 13, PHP 8.5+ |
+| Frontend | Blade + Alpine.js 3 + Tailwind CSS 3 |
+| Base de datos | MySQL 8 (SQLite en los tests) |
 | Build | Vite 5 |
-| Container | Docker (PHP-FPM + Nginx + Supervisor) |
-| Deploy | Coolify (self-hosted PaaS) |
+| Tests | Pest |
+| Estilo | Laravel Pint (preset `laravel`, `strict_types` obligatorio) |
+| Contenedor | Docker (PHP-FPM + Nginx + Supervisor) |
+| Despliegue | Coolify |
 
 ---
 
-## Prerequisites
+## Qué hace
 
-- PHP 8.3+
-- Composer 2.x
-- Node.js 20+ and npm
-- MySQL 8+ or PostgreSQL 16+
-- Docker and Docker Compose (for containerized development)
+**Tienda pública**
+
+- Catálogo con categorías, búsqueda, orden y ficha de producto con galería.
+- Carrito en sesión que se reconcilia con el catálogo en cada lectura: retira
+  lo agotado o despublicado y ajusta cantidades al stock real.
+- Comprobador de código postal: solo se puede comprar donde la librería
+  reparte.
+- Checkout sin registro, con fecha de entrega calculada según los días de
+  reparto de la zona y los festivos.
+- Blog y páginas legales (aviso legal, privacidad, condiciones de venta).
+
+**Panel de administración** (`/admin`, solo usuarios con `is_admin`)
+
+- CRUD de productos, categorías, pedidos, zonas de reparto y días sin reparto.
+- Albarán en PDF, historial de cambios por pedido (auditoría) y registro de
+  notificaciones enviadas.
+- Panel de sincronización con Verial y carga de stock/precios por CSV.
 
 ---
 
-## Development Setup
-
-### 1. Clone and enter the project
-
-```bash
-git clone https://github.com/your-org/barcodepapel.git
-cd barcodepapel
-```
-
-### 2. Install PHP dependencies
-
-```bash
-composer install
-```
-
-### 3. Install Node dependencies
-
-```bash
-npm install
-```
-
-### 4. Configure environment
+## Puesta en marcha con Docker
 
 ```bash
 cp .env.example .env
-php artisan key:generate
+docker compose up -d          # app :8080 · vite :5173 · mysql :3307 · mailpit :8025
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate
+docker compose exec app php artisan storage:link
 ```
 
-Edit `.env` and set your database credentials:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=barcodepapel
-DB_USERNAME=your_user
-DB_PASSWORD=your_password
-```
-
-### 5. Run database migrations
+Datos iniciales:
 
 ```bash
-php artisan migrate
+# Usuario administrador — lee ADMIN_EMAIL y ADMIN_PASSWORD del .env
+docker compose exec app php artisan db:seed --class=AdminUserSeeder
+
+# Festivos de fecha fija (nacionales, Baleares y Sant Ciriac)
+docker compose exec app php artisan db:seed --class=NonWorkingDaySeeder
+
+# Catálogo real (5.246 productos) o catálogo de prueba
+docker compose exec app php artisan db:seed --class=ProductionSeeder
+docker compose exec app php artisan db:seed --class=CatalogSeeder
 ```
 
-Optionally seed the database with test data:
-
-```bash
-php artisan db:seed
-```
-
-### 6. Create storage symlink
-
-```bash
-php artisan storage:link
-```
-
-### 7. Start the development servers
-
-In one terminal, start Vite (asset bundler):
-
-```bash
-npm run dev
-```
-
-In another terminal, start Laravel:
-
-```bash
-php artisan serve
-```
-
-Visit `http://localhost:8000`.
+La tienda queda en `http://localhost:8080` y el correo saliente en Mailpit,
+`http://localhost:8025`.
 
 ---
 
-## Docker Compose (local development)
+## Desarrollo
 
 ```bash
-# Copy and configure environment
-cp .env.example .env
-# Set APP_KEY before starting
-php artisan key:generate --show   # Copy the output
+npm run dev            # Vite con HMR
 
-# Edit docker-compose.yml and add the APP_KEY value, then:
-docker compose up -d
+./vendor/bin/pest      # Toda la suite
+./vendor/bin/pest --filter=CheckoutTest
+npm run test:e2e       # Navegador (Playwright) — ver tests/e2e/README.md
 
-# The app will be available at http://localhost:8080
-# Mailpit web UI at http://localhost:8025
-```
-
----
-
-## Available Artisan Commands
-
-```bash
-# Run database migrations
-php artisan migrate
-
-# Rollback last migration batch
-php artisan migrate:rollback
-
-# Fresh migration with seeds
-php artisan migrate:fresh --seed
-
-# Process queue jobs
-php artisan queue:work
-
-# Run task scheduler (every minute via cron)
-php artisan schedule:run
-
-# Cache configuration for production
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan event:cache
-
-# Clear all caches
-php artisan optimize:clear
-```
-
----
-
-## Running Tests
-
-```bash
-# Run all tests with Pest
-php artisan test
-
-# Run with coverage report
-php artisan test --coverage
-
-# Run a specific test file
-php artisan test tests/Feature/Auth/AuthenticationTest.php
-
-# Run tests in parallel
-php artisan test --parallel
-```
-
----
-
-## Code Style
-
-```bash
-# Check code style
+./vendor/bin/pint      # Corregir estilo
 ./vendor/bin/pint --test
-
-# Fix code style
-./vendor/bin/pint
 ```
+
+Las convenciones de código están en **[AGENTS.md](AGENTS.md)**, que es también
+lo que leen los agentes de IA (`CLAUDE.md` solo lo importa).
 
 ---
 
-## Deploying to Coolify
+## Configuración
 
-### Prerequisites
-
-- A Coolify instance (v4+) running and accessible.
-- A GitHub/GitLab repository connected to Coolify.
-- A MySQL or PostgreSQL service created in Coolify.
-
-### Step-by-step Coolify deployment
-
-**1. Create a new application in Coolify**
-
-- Source: your Git repository
-- Build pack: **Dockerfile**
-- Branch: `main` (or your production branch)
-- Port: `80`
-
-**2. Configure environment variables in Coolify**
-
-Go to your application > Environment Variables and add:
+Además de las variables habituales de Laravel:
 
 ```env
-APP_NAME=BarcodePapel
-APP_ENV=production
-APP_DEBUG=false
-APP_KEY=base64:YOUR_GENERATED_KEY_HERE
-APP_URL=https://your-domain.com
-APP_TIMEZONE=America/Mexico_City
 APP_LOCALE=es
+APP_TIMEZONE=Europe/Madrid
 
-# Database — use the internal Coolify service hostname
-DB_CONNECTION=mysql
-DB_HOST=your-coolify-mysql-hostname
-DB_PORT=3306
-DB_DATABASE=barcodepapel
-DB_USERNAME=barcodepapel
-DB_PASSWORD=your_secure_password
+# Administrador que crea AdminUserSeeder
+ADMIN_EMAIL=admin@barcodepapel.es
+ADMIN_PASSWORD=
 
-# Session & Cache (using database — no Redis needed)
-SESSION_DRIVER=database
-SESSION_LIFETIME=120
-CACHE_STORE=database
-QUEUE_CONNECTION=database
-
-# Mail
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.your-provider.com
-MAIL_PORT=587
-MAIL_SCHEME=tls
-MAIL_USERNAME=your@email.com
-MAIL_PASSWORD=your_mail_password
-MAIL_FROM_ADDRESS=noreply@your-domain.com
-MAIL_FROM_NAME=BarcodePapel
-
-# Health check
-HEALTH_CHECK_TOKEN=your-random-secret-token
+# Verial (ERP). Sin host o sesión, la tienda funciona igual: no se envía
+# nada al ERP y los pedidos quedan a la espera de que vuelva.
+VERIAL_HOST=
+VERIAL_PORT=8000
+VERIAL_SESSION=
+VERIAL_TARIFA=1
+VERIAL_TIMEOUT=30
 ```
 
-**3. Generate APP_KEY**
-
-Run this locally and copy the output to Coolify:
-
-```bash
-php artisan key:generate --show
-```
-
-**4. Health check**
-
-Configure Coolify health check:
-- Path: `/up`
-- Interval: 30s
-- Timeout: 10s
-
-**5. Deploy**
-
-Click "Deploy" in Coolify. The entrypoint script will automatically:
-
-1. Wait for the database to be ready.
-2. Run `php artisan migrate --force`.
-3. Cache config, routes, views, and events.
-4. Start PHP-FPM, Nginx, the queue worker (2 processes), and the scheduler via Supervisor.
+Los datos de la librería —dirección, teléfono, email, horario, coordenadas y
+datos fiscales del titular— viven en `config/tienda.php`, no en variables de
+entorno. Son la fuente única para el JSON-LD, el footer, la página de contacto,
+las páginas legales, el albarán y la firma de los correos.
 
 ---
 
-## Architecture
+## Sincronización con Verial
 
-```
-barcodepapel/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Auth/          # Authentication controllers
-│   │   │   ├── DashboardController.php
-│   │   │   └── HealthController.php
-│   │   └── Requests/Auth/
-│   │       └── LoginRequest.php
-│   ├── Models/
-│   │   └── User.php
-│   └── Providers/
-│       └── AppServiceProvider.php
-├── bootstrap/
-│   ├── app.php                # Laravel 13 bootstrap
-│   └── providers.php
-├── config/
-│   ├── app.php
-│   ├── database.php
-│   └── health.php
-├── database/
-│   ├── factories/
-│   ├── migrations/
-│   └── seeders/
-├── docker/
-│   ├── nginx/
-│   │   ├── nginx.conf
-│   │   └── default.conf
-│   ├── php/
-│   │   ├── php.ini
-│   │   └── php-fpm.conf
-│   ├── entrypoint.sh
-│   └── supervisord.conf
-├── public/
-├── resources/
-│   ├── css/app.css            # Tailwind CSS
-│   ├── js/app.js              # Alpine.js
-│   └── views/
-│       ├── auth/              # Login, register, forgot-password, etc.
-│       ├── components/        # Blade components
-│       ├── layouts/
-│       │   ├── app.blade.php  # Authenticated layout
-│       │   └── guest.blade.php # Guest layout
-│       └── dashboard.blade.php
-├── routes/
-│   ├── web.php
-│   ├── api.php
-│   └── console.php
-├── tests/
-│   ├── Feature/
-│   │   ├── Auth/
-│   │   ├── DashboardTest.php
-│   │   └── HealthCheckTest.php
-│   └── Unit/
-│       └── UserTest.php
-├── Dockerfile
-├── docker-compose.yml
-├── vite.config.js
-├── tailwind.config.js
-└── .env.example
-```
+Tareas programadas (`routes/console.php`, requieren `schedule:run` cada minuto):
+
+| Comando | Frecuencia |
+|---------|-----------|
+| `verial:sync-stock` | Cada hora, de 09:00 a 21:00 |
+| `verial:sync-catalog` | Diario a las 02:00 |
+| `verial:send-pending-orders` | Cada 5 minutos |
+| `verial:sync-order-status` | Cada 15 minutos |
+| `verial:sync-images` | Manual |
+
+Un pedido web nace en estado `pendiente` y **no** se envía al ERP en ese
+momento: entra en Verial cuando el administrador lo marca como `preparado`.
 
 ---
 
-## Authentication Features
+## Despliegue en Coolify
 
-| Feature | Route | Description |
-|---------|-------|-------------|
-| Login | `GET/POST /login` | Email + password with rate limiting |
-| Register | `GET/POST /register` | Name, email, password with confirmation |
-| Logout | `POST /logout` | Session invalidation |
-| Forgot Password | `GET/POST /forgot-password` | Email reset link |
-| Reset Password | `GET/POST /reset-password/{token}` | Token-based reset |
-| Email Verification | `GET /verify-email` | Required before dashboard access |
-| Confirm Password | `GET/POST /confirm-password` | For sensitive operations |
+1. Nueva aplicación con build pack **Dockerfile**, puerto `80`.
+2. Variables de entorno: las de arriba más `APP_ENV=production`,
+   `APP_DEBUG=false`, `APP_URL`, credenciales de base de datos, correo SMTP y
+   `HEALTH_CHECK_TOKEN`. Genera la clave con `php artisan key:generate --show`.
+3. Health check en `/up`.
+4. Al desplegar, el entrypoint espera a la base de datos, ejecuta
+   `migrate --force`, cachea configuración/rutas/vistas y arranca PHP-FPM,
+   Nginx, dos workers de cola y el scheduler vía Supervisor.
 
----
-
-## Frontend Components
-
-Alpine.js global stores:
-
-- `$store.notifications` — toast notification system with `success()`, `error()`, `warning()`
-- `$store.ui` — sidebar toggle, dark mode with `localStorage` persistence
-
-Alpine.js reusable data:
-
-- `dropdown(defaultOpen)` — dropdown menus with click-outside close
-- `modal(defaultOpen)` — modal dialogs with body scroll lock
-- `asyncForm()` — forms with loading state and validation error handling
-
-Blade components:
-
-- `<x-input-label>` — form labels with optional required indicator
-- `<x-text-input>` — text inputs with error state styling
-- `<x-input-error>` — validation error display
-- `<x-primary-button>` — submit button with loading state
-- `<x-checkbox>` — styled checkbox input
-- `<x-auth-session-status>` — session status alert
+> La configuración **no** se cachea durante el build, solo en el arranque del
+> contenedor: en el build todavía no existen las variables de entorno.
 
 ---
 
-## Production Checklist
+## Antes de abrir la tienda al público
 
-Before going live:
-
-- [ ] Set `APP_ENV=production` and `APP_DEBUG=false`
-- [ ] Generate a fresh `APP_KEY` and keep it secret
-- [ ] Configure a real mail provider (not `log`)
-- [ ] Set `SESSION_SECURE_COOKIE=true` (HTTPS enforced)
-- [ ] Review and set `BCRYPT_ROUNDS=12` (already the default)
-- [ ] Configure proper database backups
-- [ ] Set up monitoring/alerting
-- [ ] Review Nginx headers in `docker/nginx/nginx.conf`
-- [ ] Configure a CDN for static assets (optional)
+- [ ] Rellenar `legal.razon_social` y `legal.nif` en `config/tienda.php` — son
+      obligatorios por la LSSI y las páginas legales los omiten mientras estén
+      vacíos.
+- [ ] Revisar la fecha de `legal.actualizado` si se tocan los textos legales.
+- [ ] Dar de alta las zonas de reparto con su tarifa y sus días.
+- [ ] Cargar los festivos (`NonWorkingDaySeeder`) y añadir los móviles del año
+      —Jueves y Viernes Santo, segunda fiesta de Pascua— y los cierres por
+      vacaciones desde el panel.
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`.
+- [ ] Proveedor de correo real, no `log`.
+- [ ] Copias de seguridad de la base de datos.
 
 ---
 
-## License
+## Licencia
 
 MIT

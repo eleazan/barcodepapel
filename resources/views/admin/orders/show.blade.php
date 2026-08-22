@@ -133,6 +133,12 @@
                         <dt class="text-gray-400 text-xs">Código postal</dt>
                         <dd class="text-gray-700">{{ $order->postal_code }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-gray-400 text-xs">Fecha prevista de entrega</dt>
+                        <dd class="text-gray-700 first-letter:uppercase">
+                            {{ $order->formattedEstimatedDelivery() ?? 'Sin fecha asignada' }}
+                        </dd>
+                    </div>
                 </dl>
             </x-admin.card>
 

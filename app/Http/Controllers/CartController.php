@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliveryZone;
 use App\Models\Product;
 use App\Services\Cart\Cart;
+use App\Services\Delivery\DeliveryCalendar;
 use App\Services\Delivery\DeliveryZoneResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -99,7 +101,7 @@ class CartController extends Controller
     /**
      * Comprobación de cobertura para el widget de código postal.
      */
-    public function checkPostalCode(Request $request, DeliveryZoneResolver $zones): JsonResponse
+    public function checkPostalCode(Request $request, DeliveryZoneResolver $zones, DeliveryCalendar $calendar): JsonResponse
     {
         $request->validate([
             'codigo_postal' => ['required', 'digits:5'],
@@ -109,13 +111,41 @@ class CartController extends Controller
 
         $zone = $zones->resolve($request->string('codigo_postal')->toString());
 
+        $proxima = $zone?->nextDeliveryDate();
+
         return response()->json([
             'cubierto'                => $zone !== null,
             'zona'                    => $zone?->neighborhood,
             'ciudad'                  => $zone?->city,
             'gastos_envio'            => $zone !== null ? (float) $zone->delivery_fee : null,
             'gastos_envio_formateado' => $zone?->formattedFee(),
+            'dias_reparto'            => $zone?->deliveryDaysLabel(),
+            'reparto_diario'          => $zone?->deliversAnyOpenDay(),
+            'proxima_entrega'         => $proxima?->toDateString(),
+            'proxima_entrega_texto'   => $proxima?->translatedFormat('l, j \d\e F'),
+            'motivo_retraso'          => $zone !== null ? $this->motivoDelRetraso($zone, $calendar) : null,
         ]);
+    }
+
+    /**
+     * Explicación de por qué la entrega no cae en el primer día de reparto:
+     * «El jueves 15 de agosto cerramos por Asunción».
+     */
+    private function motivoDelRetraso(DeliveryZone $zone, DeliveryCalendar $calendar): ?string
+    {
+        $saltados = $calendar->closuresDelaying($zone);
+
+        if ($saltados === []) {
+            return null;
+        }
+
+        $primero = $saltados[0];
+
+        return sprintf(
+            'El %s cerramos por %s',
+            $primero['fecha']->translatedFormat('l j \d\e F'),
+            $primero['cierre']->name,
+        );
     }
 
     private function respond(Request $request, Cart $cart, bool $success, string $message): RedirectResponse|JsonResponse
