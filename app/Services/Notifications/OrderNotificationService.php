@@ -65,7 +65,7 @@ class OrderNotificationService
 
         if (! $channel) {
             return $this->createLog($order, $channelId, $recipient ?? '', $event, [
-                'status' => NotificationLog::STATUS_FAILED,
+                'status'        => NotificationLog::STATUS_FAILED,
                 'error_message' => "Canal '{$channelId}' no registrado.",
             ]);
         }
@@ -74,7 +74,7 @@ class OrderNotificationService
 
         if (! $recipient || ! $channel->canSend($order, $recipient)) {
             return $this->createLog($order, $channelId, $recipient ?? '', $event, [
-                'status' => NotificationLog::STATUS_FAILED,
+                'status'        => NotificationLog::STATUS_FAILED,
                 'error_message' => 'Destinatario no válido o no disponible.',
             ]);
         }
@@ -83,16 +83,16 @@ class OrderNotificationService
             $result = $channel->send($order, $recipient, $event, $context);
 
             return $this->createLog($order, $channelId, $recipient, $event, [
-                'subject' => $result['subject'] ?? null,
-                'body' => $result['body'],
-                'status' => NotificationLog::STATUS_SENT,
-                'sent_at' => now(),
+                'subject'  => $result['subject'] ?? null,
+                'body'     => $result['body'],
+                'status'   => NotificationLog::STATUS_SENT,
+                'sent_at'  => now(),
                 'metadata' => $context['metadata'] ?? null,
             ]);
         } catch (\Throwable $e) {
             return $this->createLog($order, $channelId, $recipient, $event, [
-                'body' => 'Error al enviar.',
-                'status' => NotificationLog::STATUS_FAILED,
+                'body'          => 'Error al enviar.',
+                'status'        => NotificationLog::STATUS_FAILED,
                 'error_message' => $e->getMessage(),
             ]);
         }
@@ -134,16 +134,16 @@ class OrderNotificationService
     private function createLog(Order $order, string $channel, string $recipient, string $event, array $data): NotificationLog
     {
         return NotificationLog::create([
-            'order_id' => $order->id,
-            'channel' => $channel,
-            'recipient' => $recipient,
-            'event' => $event,
-            'subject' => $data['subject'] ?? null,
-            'body' => $data['body'] ?? '',
-            'status' => $data['status'],
+            'order_id'      => $order->id,
+            'channel'       => $channel,
+            'recipient'     => $recipient,
+            'event'         => $event,
+            'subject'       => $data['subject'] ?? null,
+            'body'          => $data['body']    ?? '',
+            'status'        => $data['status'],
             'error_message' => $data['error_message'] ?? null,
-            'metadata' => $data['metadata'] ?? null,
-            'sent_at' => $data['sent_at'] ?? null,
+            'metadata'      => $data['metadata']      ?? null,
+            'sent_at'       => $data['sent_at']       ?? null,
         ]);
     }
 }

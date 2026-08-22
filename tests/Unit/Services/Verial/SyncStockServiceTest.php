@@ -5,9 +5,10 @@ declare(strict_types=1);
 use App\Models\Product;
 use App\Services\Verial\SyncStockService;
 use App\Services\Verial\VerialClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function makeSyncStockService(array $stocks): SyncStockService
 {

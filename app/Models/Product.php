@@ -88,15 +88,15 @@ class Product extends Model
     protected function imageUrl(): Attribute
     {
         return Attribute::get(fn () => match (true) {
-            empty($this->image)                      => null,
-            str_starts_with($this->image, 'http')    => $this->image,
-            default                                  => Storage::url($this->image),
+            empty($this->image)                   => null,
+            str_starts_with($this->image, 'http') => $this->image,
+            default                               => Storage::url($this->image),
         });
     }
 
     public function formattedPrice(): string
     {
-        return number_format((float) $this->price, 2, ',', '.') . ' €';
+        return number_format((float) $this->price, 2, ',', '.').' €';
     }
 
     public function fabricante(): BelongsTo

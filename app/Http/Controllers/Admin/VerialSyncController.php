@@ -25,7 +25,7 @@ class VerialSyncController extends Controller
     {
         $isConfigured = $this->client->isConfigured();
 
-        $totalSyncronizados = Product::whereNotNull('verial_id')->count();
+        $totalSyncronizados  = Product::whereNotNull('verial_id')->count();
         $totalSinSincronizar = Product::whereNull('verial_id')->count();
 
         $lastSync = Product::whereNotNull('verial_synced_at')

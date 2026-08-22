@@ -8,7 +8,6 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductBookDetail;
 use App\Models\VerialSyncLog;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -20,10 +19,10 @@ class SyncCatalogService
 
     public function sync(?string $since = null): SyncResult
     {
-        $processed = 0;
-        $created = 0;
-        $updated = 0;
-        $errors = 0;
+        $processed     = 0;
+        $created       = 0;
+        $updated       = 0;
+        $errors        = 0;
         $errorMessages = [];
 
         try {
@@ -32,7 +31,7 @@ class SyncCatalogService
                 $params['FechaDesde'] = $since;
             }
 
-            $response = $this->client->get('GetArticulosWS', $params);
+            $response  = $this->client->get('GetArticulosWS', $params);
             $articulos = $response['Articulos'] ?? $response['articulos'] ?? $response;
 
             if (! is_array($articulos)) {
@@ -96,7 +95,7 @@ class SyncCatalogService
         }
 
         $exists = Product::where('verial_id', $verialId)->exists();
-        $data = $this->mapArticulo($articulo);
+        $data   = $this->mapArticulo($articulo);
 
         /** @var Product $product */
         $product = Product::updateOrCreate(
@@ -117,9 +116,9 @@ class SyncCatalogService
         ProductBookDetail::updateOrCreate(
             ['product_id' => $product->id],
             [
-                'isbn'             => $articulo['ISBN'] ?? null,
+                'isbn'             => $articulo['ISBN']      ?? null,
                 'subtitulo'        => $articulo['Subtitulo'] ?? null,
-                'autores'          => $articulo['Autores'] ?? null,
+                'autores'          => $articulo['Autores']   ?? null,
                 'editorial'        => $articulo['Editorial'] ?? null,
                 'coleccion'        => $articulo['Coleccion'] ?? null,
                 'paginas'          => isset($articulo['Paginas']) ? (int) $articulo['Paginas'] : null,
@@ -131,14 +130,14 @@ class SyncCatalogService
 
     private function mapArticulo(array $data): array
     {
-        $tipoArticulo = (int) ($data['TipoArticulo'] ?? 1);
+        $tipoArticulo  = (int) ($data['TipoArticulo'] ?? 1);
         $fechaInactivo = $data['FechaInactivo'] ?? null;
-        $isActive = empty($fechaInactivo);
+        $isActive      = empty($fechaInactivo);
 
         // Resolver category_id a partir de CodigoFamilia; usar "Sin categoría" como fallback
         $categoryId = null;
         if (! empty($data['CodigoFamilia'])) {
-            $category = Category::where('verial_familia_id', (int) $data['CodigoFamilia'])->first();
+            $category   = Category::where('verial_familia_id', (int) $data['CodigoFamilia'])->first();
             $categoryId = $category?->id;
         }
         if ($categoryId === null) {
@@ -151,7 +150,7 @@ class SyncCatalogService
             $fabricanteId = (int) $data['CodigoFabricante'];
         }
 
-        $name = trim((string) ($data['Descripcion'] ?? ''));
+        $name   = trim((string) ($data['Descripcion'] ?? ''));
         $mapped = [
             'verial_id'            => (int) $data['CodigoArticulo'],
             'tipo_articulo'        => $tipoArticulo,
@@ -169,7 +168,7 @@ class SyncCatalogService
         ];
 
         if ($name === '') {
-            $name = 'Artículo ' . $data['CodigoArticulo'];
+            $name = 'Artículo '.$data['CodigoArticulo'];
         }
         $mapped['name'] = $name;
         $mapped['slug'] = $this->uniqueSlug(Str::slug($name), (int) $data['CodigoArticulo']);
@@ -193,7 +192,7 @@ class SyncCatalogService
 
         // Si el slug ya está en uso por otro producto, añadir sufijo con verial_id
         if (Product::where('slug', $base)->whereNot('verial_id', $verialId)->exists()) {
-            return $base . '-' . $verialId;
+            return $base.'-'.$verialId;
         }
 
         return $base;
@@ -204,8 +203,8 @@ class SyncCatalogService
         return Category::firstOrCreate(
             ['slug' => 'sin-categoria'],
             [
-                'name'      => 'Sin categoría',
-                'is_active' => false,
+                'name'       => 'Sin categoría',
+                'is_active'  => false,
                 'sort_order' => 0,
             ]
         );

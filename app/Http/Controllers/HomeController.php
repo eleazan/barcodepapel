@@ -19,9 +19,9 @@ class HomeController extends Controller
             ->get();
 
         return view('store.home', [
-            'categories' => $categories,
-            'productsCount' => Product::active()->count(),
-            'categoriesCount' => $categories->count(),
+            'categories'         => $categories,
+            'productsCount'      => Product::active()->count(),
+            'categoriesCount'    => $categories->count(),
             'deliveryZonesCount' => DeliveryZone::where('is_active', true)->count(),
         ]);
     }

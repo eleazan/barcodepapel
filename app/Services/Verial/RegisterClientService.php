@@ -26,8 +26,8 @@ class RegisterClientService
 
         try {
             $response = $this->client->post('NuevoClienteWS', [
-                'Nombre'   => $user->name,
-                'Email'    => $user->email,
+                'Nombre' => $user->name,
+                'Email'  => $user->email,
             ]);
 
             $clienteId = (int) ($response['CodigoCliente'] ?? $response['Codigo'] ?? 0);

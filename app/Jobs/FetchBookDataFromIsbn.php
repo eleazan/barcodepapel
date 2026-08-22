@@ -43,11 +43,13 @@ class FetchBookDataFromIsbn implements ShouldQueue
         if ($response->status() === 429) {
             // Cuota agotada — volver a encolar en 10 minutos
             $this->release(600);
+
             return;
         }
 
         if (! $response->ok()) {
             Log::warning("Google Books error para ISBN {$isbn}: HTTP {$response->status()}");
+
             return;
         }
 
@@ -61,7 +63,7 @@ class FetchBookDataFromIsbn implements ShouldQueue
 
         if (! empty($data['items'])) {
             $info = $data['items'][0]['volumeInfo'] ?? [];
-            $lang = $info['language'] ?? '';
+            $lang = $info['language']               ?? '';
 
             // Título: solo reemplazamos si Google Books lo tiene en español o catalán
             if (! empty($info['title']) && in_array($lang, ['es', 'ca'], true)) {

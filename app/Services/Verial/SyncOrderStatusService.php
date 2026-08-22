@@ -16,14 +16,14 @@ class SyncOrderStatusService
 
     public function sync(): SyncResult
     {
-        $processed = 0;
-        $updated = 0;
-        $errors = 0;
+        $processed     = 0;
+        $updated       = 0;
+        $errors        = 0;
         $errorMessages = [];
 
         try {
             $response = $this->client->get('EstadoPedidosWS');
-            $pedidos = $response['Pedidos'] ?? $response['pedidos'] ?? $response;
+            $pedidos  = $response['Pedidos'] ?? $response['pedidos'] ?? $response;
 
             if (! is_array($pedidos)) {
                 $pedidos = [];
@@ -34,7 +34,7 @@ class SyncOrderStatusService
 
                 try {
                     $verialPedidoId = (int) ($item['CodigoPedido'] ?? $item['Codigo'] ?? 0);
-                    $estado = (string) ($item['Estado'] ?? '');
+                    $estado         = (string) ($item['Estado'] ?? '');
 
                     if ($verialPedidoId === 0) {
                         continue;

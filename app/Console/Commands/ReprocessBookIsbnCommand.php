@@ -49,7 +49,7 @@ class ReprocessBookIsbnCommand extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->info("Listo. Ejecuta: php artisan queue:work --sleep=1");
+        $this->info('Listo. Ejecuta: php artisan queue:work --sleep=1');
 
         return self::SUCCESS;
     }

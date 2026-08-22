@@ -46,7 +46,7 @@ class NotificationLogController extends Controller
         OrderNotificationService $service,
     ): RedirectResponse {
         $request->validate([
-            'channel' => ['required', 'string', 'in:' . implode(',', array_keys(NotificationLog::CHANNELS))],
+            'channel'   => ['required', 'string', 'in:'.implode(',', array_keys(NotificationLog::CHANNELS))],
             'recipient' => ['required', 'string', 'max:255'],
         ]);
 

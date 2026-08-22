@@ -6,7 +6,6 @@ namespace App\Services\Verial;
 
 use App\Models\Product;
 use App\Models\VerialSyncLog;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SyncStockService
@@ -17,14 +16,14 @@ class SyncStockService
 
     public function sync(): SyncResult
     {
-        $processed = 0;
-        $updated = 0;
-        $errors = 0;
+        $processed     = 0;
+        $updated       = 0;
+        $errors        = 0;
         $errorMessages = [];
 
         try {
             $response = $this->client->get('GetStockArticulosWS');
-            $stocks = $response['Stocks'] ?? $response['stocks'] ?? $response;
+            $stocks   = $response['Stocks'] ?? $response['stocks'] ?? $response;
 
             if (! is_array($stocks)) {
                 $stocks = [];
@@ -35,7 +34,7 @@ class SyncStockService
 
                 try {
                     $verialId = (int) ($item['CodigoArticulo'] ?? 0);
-                    $stock = (int) ($item['Stock'] ?? $item['Unidades'] ?? 0);
+                    $stock    = (int) ($item['Stock'] ?? $item['Unidades'] ?? 0);
 
                     if ($verialId === 0) {
                         continue;

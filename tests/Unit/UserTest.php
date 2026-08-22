@@ -29,7 +29,7 @@ test('user initials are uppercased', function () {
 });
 
 test('isVerified returns true when email is verified', function () {
-    $user = new User();
+    $user                    = new User;
     $user->email_verified_at = now();
 
     expect($user->isVerified())->toBeTrue();

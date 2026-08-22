@@ -27,8 +27,9 @@ interface NotificationChannel
     /**
      * Send the notification. Returns [subject, body] on success.
      *
-     * @throws \Exception on failure
      * @return array{subject: ?string, body: string}
+     *
+     * @throws \Exception on failure
      */
     public function send(Order $order, string $recipient, string $event, array $context = []): array;
 }

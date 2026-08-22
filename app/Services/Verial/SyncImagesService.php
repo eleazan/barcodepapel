@@ -20,10 +20,10 @@ class SyncImagesService
 
     public function sync(): SyncResult
     {
-        $processed = 0;
-        $created = 0;
-        $updated = 0;
-        $errors = 0;
+        $processed     = 0;
+        $created       = 0;
+        $updated       = 0;
+        $errors        = 0;
         $errorMessages = [];
 
         try {
@@ -39,7 +39,7 @@ class SyncImagesService
 
                 try {
                     $verialId = (int) ($item['CodigoArticulo'] ?? 0);
-                    $url = (string) ($item['URL'] ?? $item['Url'] ?? '');
+                    $url      = (string) ($item['URL'] ?? $item['Url'] ?? '');
 
                     if ($verialId === 0 || $url === '') {
                         continue;
@@ -57,7 +57,7 @@ class SyncImagesService
                     }
 
                     $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'jpg';
-                    $filename = 'products/' . Str::uuid() . '.' . $extension;
+                    $filename  = 'products/'.Str::uuid().'.'.$extension;
 
                     Storage::disk('public')->put($filename, $imageResponse->body());
 

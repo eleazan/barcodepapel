@@ -61,13 +61,13 @@ class VerialSyncLog extends Model
         ?string $error = null
     ): self {
         $log = new self([
-            'entity_type'    => $entityType,
-            'entity_id'      => $entityId,
-            'operation'      => $operation,
-            'verial_method'  => $verialMethod,
-            'status'         => $error === null ? 'ok' : 'error',
+            'entity_type'     => $entityType,
+            'entity_id'       => $entityId,
+            'operation'       => $operation,
+            'verial_method'   => $verialMethod,
+            'status'          => $error === null ? 'ok' : 'error',
             'verial_response' => $response,
-            'error_message'  => $error,
+            'error_message'   => $error,
         ]);
 
         $log->save();

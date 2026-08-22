@@ -5,12 +5,12 @@ declare(strict_types=1);
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\VerialSyncLog;
 use App\Services\Verial\SendOrderService;
 use App\Services\Verial\VerialClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function makeConfiguredSendOrderService(array $response = []): SendOrderService
 {
@@ -29,7 +29,7 @@ function makeConfiguredSendOrderService(array $response = []): SendOrderService
 function makeOrderWithItems(): Order
 {
     $product = Product::factory()->create(['verial_id' => 55, 'price' => 10.00]);
-    $order = Order::factory()->create([
+    $order   = Order::factory()->create([
         'customer_name'    => 'Juan García',
         'customer_email'   => 'juan@example.com',
         'customer_phone'   => '600000000',
@@ -51,7 +51,7 @@ function makeOrderWithItems(): Order
 describe('SendOrderService', function () {
 
     test('send() envía payload correcto a NuevoDocClienteWS', function () {
-        $order = makeOrderWithItems();
+        $order   = makeOrderWithItems();
         $service = makeConfiguredSendOrderService();
 
         $service->send($order);
@@ -61,26 +61,26 @@ describe('SendOrderService', function () {
 
             return str_contains($request->url(), 'NuevoDocClienteWS')
                 && $body['NombreCliente'] === $order->customer_name
-                && $body['EmailCliente'] === $order->customer_email
+                && $body['EmailCliente']  === $order->customer_email
                 && isset($body['Lineas']);
         });
     });
 
     test('send() actualiza pedido con verial_pedido_id y verial_referencia', function () {
-        $order = makeOrderWithItems();
+        $order   = makeOrderWithItems();
         $service = makeConfiguredSendOrderService(['CodigoPedido' => 99, 'Referencia' => 'REF-001']);
 
         $service->send($order);
 
         $this->assertDatabaseHas('orders', [
-            'id'               => $order->id,
-            'verial_pedido_id' => 99,
+            'id'                => $order->id,
+            'verial_pedido_id'  => 99,
             'verial_referencia' => 'REF-001',
         ]);
     });
 
     test('send() establece verial_enviado_at con timestamp', function () {
-        $order = makeOrderWithItems();
+        $order   = makeOrderWithItems();
         $service = makeConfiguredSendOrderService();
 
         $service->send($order);
@@ -90,7 +90,7 @@ describe('SendOrderService', function () {
     });
 
     test('send() registra log de sincronización', function () {
-        $order = makeOrderWithItems();
+        $order   = makeOrderWithItems();
         $service = makeConfiguredSendOrderService();
 
         $service->send($order);
@@ -105,12 +105,12 @@ describe('SendOrderService', function () {
     });
 
     test('send() lanza RuntimeException cuando Verial no está configurado', function () {
-        $order = makeOrderWithItems();
-        $client = new VerialClient(host: null, port: 8000, session: null, timeout: 5);
+        $order   = makeOrderWithItems();
+        $client  = new VerialClient(host: null, port: 8000, session: null, timeout: 5);
         $service = new SendOrderService($client);
 
         expect(fn () => $service->send($order))
-            ->toThrow(\RuntimeException::class);
+            ->toThrow(RuntimeException::class);
     });
 
 });

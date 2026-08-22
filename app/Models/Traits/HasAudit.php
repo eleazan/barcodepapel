@@ -73,7 +73,7 @@ trait HasAudit
 
     protected function auditableChanges(): array
     {
-        $dirty = $this->getDirty();
+        $dirty    = $this->getDirty();
         $filtered = $this->filterAuditFields($dirty);
 
         if (empty($filtered)) {
@@ -109,14 +109,14 @@ trait HasAudit
 
         AuditLog::create([
             'auditable_type' => $this->getMorphClass(),
-            'auditable_id' => $this->getKey(),
-            'user_id' => auth()->id(),
-            'event' => $event,
-            'old_values' => ! empty($oldValues) ? $oldValues : null,
-            'new_values' => ! empty($newValues) ? $newValues : null,
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request?->userAgent() ? substr($request->userAgent(), 0, 255) : null,
-            'created_at' => now(),
+            'auditable_id'   => $this->getKey(),
+            'user_id'        => auth()->id(),
+            'event'          => $event,
+            'old_values'     => ! empty($oldValues) ? $oldValues : null,
+            'new_values'     => ! empty($newValues) ? $newValues : null,
+            'ip_address'     => $request?->ip(),
+            'user_agent'     => $request?->userAgent() ? substr($request->userAgent(), 0, 255) : null,
+            'created_at'     => now(),
         ]);
     }
 }

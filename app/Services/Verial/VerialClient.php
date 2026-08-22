@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Log;
 class VerialClient
 {
     public function __construct(
-        private readonly string|null $host,
+        private readonly ?string $host,
         private readonly int $port,
-        private readonly string|null $session,
+        private readonly ?string $session,
         private readonly int $timeout,
     ) {}
 
@@ -45,7 +45,7 @@ class VerialClient
             ]);
 
             throw new \RuntimeException(
-                'Error de conexión con Verial: ' . $e->getMessage(),
+                'Error de conexión con Verial: '.$e->getMessage(),
                 previous: $e
             );
         }
@@ -75,7 +75,7 @@ class VerialClient
             ]);
 
             throw new \RuntimeException(
-                'Error de conexión con Verial: ' . $e->getMessage(),
+                'Error de conexión con Verial: '.$e->getMessage(),
                 previous: $e
             );
         }
