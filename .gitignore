@@ -2,6 +2,9 @@
 /public/build
 /public/hot
 /public/storage
+# Manifiesto de paquetes: lo regenera `package:discover` en cada despliegue
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
 /storage/*.key
 /storage/app/public
 /storage/framework/cache/data/*
