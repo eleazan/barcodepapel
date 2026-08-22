@@ -211,7 +211,7 @@
                                         <p class="mt-2 text-sm text-red-600">No hemos podido comprobarlo. Int&eacute;ntalo de nuevo.</p>
                                     </template>
 
-                                    <p class="mt-2 text-xs text-gray-500">El importe definitivo se calcula al finalizar el pedido.</p>
+                                    <p class="mt-2 text-xs text-gray-500">IVA incluido. El importe definitivo se calcula al finalizar el pedido.</p>
                                 </div>
                             </dl>
 

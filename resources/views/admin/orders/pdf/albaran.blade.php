@@ -49,6 +49,10 @@
         .totals td.label { color: #6b7280; }
         .totals td.value { text-align: right; }
         .totals tr.total td { border-top: 2px solid #0ea5e9; padding-top: 8px; font-size: 14px; font-weight: bold; color: #1f2937; }
+        .totals td.tax-note { text-align: right; font-size: 9px; color: #9ca3af; padding-top: 4px; }
+
+        /* Naturaleza del documento */
+        .disclaimer { clear: both; margin-top: 8px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 9px; color: #6b7280; line-height: 1.5; }
 
         /* Notes */
         .notes { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; }
@@ -137,7 +141,17 @@
                     <td>Total</td>
                     <td class="value">{{ number_format((float) $order->total, 2, ',', '.') }} &euro;</td>
                 </tr>
+                <tr>
+                    <td class="tax-note" colspan="2">IVA incluido en los precios</td>
+                </tr>
             </table>
+        </div>
+
+        {{-- Naturaleza del documento: la factura la emite el sistema de gestión --}}
+        <div class="disclaimer">
+            Documento de entrega. <strong>No tiene la consideración de factura</strong> a efectos fiscales: los importes
+            indicados incluyen el IVA aplicable a cada artículo y el desglose por tipo impositivo figura en la factura,
+            que se emite desde nuestro sistema de gestión y se entrega a petición del cliente.
         </div>
 
         {{-- Notes --}}

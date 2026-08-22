@@ -47,7 +47,8 @@ php artisan route:list
 - Layouts: `layouts/app.blade.php` (autenticado) y `layouts/guest.blade.php`
 - Traducciones en `lang/es/`
 - Rutas web en `routes/web.php`, API en `routes/api.php`
-- **Datos de la tienda en `config/tienda.php`** — nombre, dirección, teléfono, email, coordenadas y horario. Fuente única: los usan el layout de la tienda (JSON-LD, metas geo, footer), la página de contacto, el albarán en PDF y la firma de los emails. Nunca escribir estos datos a mano en una vista
+- **Datos de la tienda en `config/tienda.php`** — nombre, dirección, teléfono, email, coordenadas, horario y datos del titular (`legal.razon_social`, `legal.nif`, `legal.registro`, `legal.actualizado`). Fuente única: los usan el layout de la tienda (JSON-LD, metas geo, footer), la página de contacto, las páginas legales, el albarán en PDF y la firma de los emails. Nunca escribir estos datos a mano en una vista
+- **El carrito nunca se inyecta en el constructor de un controlador**, siempre como parámetro del método. Laravel guarda la instancia del controlador dentro del objeto `Route`, así que una dependencia `scoped` inyectada en el constructor sobrevive a la petición que la creó
 - Alpine.js stores globales: `$store.notifications` (toasts), `$store.ui` (dark mode, sidebar)
 - Alpine.js components: `dropdown()`, `modal()`, `asyncForm()`
 - Color de marca "brand" definido en `tailwind.config.js` (paleta **teal**, extraída del logo)
@@ -141,6 +142,9 @@ tests/
 - **Rutas:** `/carrito` (index/add/update/remove/clear), `/comprobar-codigo-postal` (JSON), `/finalizar-pedido` (show/store, POST con `throttle:10,1`), `/pedido/{orderNumber}`.
 - **Componentes Alpine:** `postalChecker(endpoint, cpInicial)` y `checkoutForm(...)` en `resources/js/app.js`.
 - **Componente Blade:** `<x-store.cart-badge />` (contador en la cabecera, acepta `mobile`) y `<x-store.flash />` (mensajes flash de la tienda).
+- **El pedido no cambia entre el resumen y la confirmación:** `CheckoutController::show` guarda en sesión (`checkout_resumen`) una `App\Services\Cart\CartSnapshot` con lo que el cliente está viendo —líneas, cantidades y precios—. Al confirmar se contrasta con el estado actual del carrito: si algo cambió (línea retirada, cantidad recortada por stock, precio actualizado desde el ERP) **no se crea el pedido**; se vuelve al formulario con `cart_changes` detallando el cambio para que el cliente lo acepte de nuevo. Sin resumen en sesión (POST directo) no hay nada que contrastar y el pedido sigue su curso.
+- **Páginas legales:** `/aviso-legal`, `/privacidad` y `/condiciones-de-venta` (`LegalController`, vistas en `store/legal/`, envueltas en `<x-store.legal-page>`). Enlazadas desde el footer, el checkbox de condiciones del checkout y el sitemap. Los textos reflejan el funcionamiento real: reparto propio, pago contra entrega, sin pasarela.
+- **IVA:** no se desglosa por producto (la factura la emite Verial). Las vistas de carrito, checkout y confirmación indican «IVA incluido», y el albarán en PDF advierte además de que no tiene la consideración de factura.
 - **Pedidos y Verial:** el pedido web nace `pendiente` y **no** se envía al ERP en ese momento. Entra en Verial cuando el admin lo marca `preparado` (`Admin\OrderController::updateStatus`), que es el mismo umbral que usa `verial:send-pending-orders`. Así hay un único punto de disparo y no se duplican envíos.
 
 ## Sistema de notificaciones

@@ -23,6 +23,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StoreController;
 use Illuminate\Support\Facades\Route;
@@ -107,6 +108,16 @@ Route::get('/contacto', [StoreController::class, 'contact'])->name('contact');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+
+/*
+|--------------------------------------------------------------------------
+| Páginas legales
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/aviso-legal', [LegalController::class, 'notice'])->name('legal');
+Route::get('/privacidad', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/condiciones-de-venta', [LegalController::class, 'terms'])->name('terms');
 
 /*
 |--------------------------------------------------------------------------

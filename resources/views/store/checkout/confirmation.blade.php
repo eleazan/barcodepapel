@@ -105,7 +105,8 @@
             <div class="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 mb-8">
                 <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <p class="text-sm text-amber-800">
-                    El pago se realiza en el momento de la entrega. No hemos hecho ning&uacute;n cargo online.
+                    El pago se realiza en el momento de la entrega, en efectivo o con tarjeta. No hemos hecho
+                    ning&uacute;n cargo online. Los importes incluyen el IVA.
                 </p>
             </div>
 
