@@ -222,6 +222,19 @@ tests/
 - **Cuota:** `App\Services\Books\GoogleBooksQuota` cuenta en caché las peticiones del día (`GOOGLE_BOOKS_DAILY_QUOTA`, 1.000 por defecto) y el panel no deja encolar más libros de los que quedan. Un 429 o la cuota agotada **no cuentan como intento**: el job se libera y vuelve cuando la API se renueva
 - **Refresco de fichas:** `books:reprocess` despacha el job con `refresh: true`, que vuelve a pedir los metadatos aunque el libro ya tenga portada (y no la toca). Es lo que arregla los títulos en mayúsculas que llegaron del CSV
 
+### Pendiente: fichas de productos que no son libros
+
+Investigado en agosto de 2026, **sin implementar**. Ahora mismo no hace falta: los
+5.246 productos del catálogo real son todos libros (`tipo_articulo = 2`); la
+papelería y el regalo todavía no están de alta.
+
+- **Primero, lo que ya existe:** `SyncImagesService` (`GetImagenesArticulosWS`) trae las imágenes del propio Verial. Es la fuente correcta —dato propio, sin cuota ni dudas de licencia— y hoy solo se lanza a mano desde `/admin/verial`. Convertirla en tarea del panel es la primera candidata
+- **Open Icecat** (`icecat.com`, registro gratuito) es la mejor API para papelería: +500.000 fichas con imágenes, descripciones y especificaciones **autorizadas por la marca** (BIC, Stabilo, Faber-Castell, Post-it…), en XML/JSON/CSV. Su modelo de negocio es que los comercios usen sus fichas, así que la licencia está limpia
+- **Open Food Facts** (alimentación) y **Open Beauty Facts** (cosmética, ~100.000 productos) son gratis y sin clave, con buena cobertura española, pero **sus imágenes son CC-BY-SA y obligan a atribuir** en la ficha del producto. **Open Products Facts** (el resto) es demasiado pequeño para contar
+- **De pago si hiciera falta:** EAN-Search (~9 €/mes, europeo, 1.200 M de EAN pero **casi sin imágenes**) y Barcode Lookup (mejor cobertura de imagen). UPCitemdb da 100 consultas al día sin registro, pero su sesgo estadounidense choca con los EAN `84…`
+- **Lo que ninguna API resuelve:** el material escolar de marca pequeña, la importación, el regalo y los artículos **sin EAN de fabricante** (código interno de Verial) no están en ninguna base pública. Para ese tramo la vía real son los **catálogos de los mayoristas** (Liderpapel, Dohe, Folder, Carlin), que dan CSV con fotos a sus clientes — y el importador de CSV ya está montado
+- **Detalle de diseño a decidir antes de empezar:** el marcado de intentos vive en `product_book_details`, que es tabla de libros. Una tarea para no-libros necesita su propio sitio donde recordar por dónde ha pasado (columnas en `products` o una tabla aparte). Todo lo demás —`BatchTask`, registro, panel, cuotas, lotes— ya sirve tal cual
+
 ## Correo
 
 - **Layout único:** `<x-mail.layout>` (`components/mail/layout.blade.php`). **Todo correo que salga de la aplicación lo usa**, incluidos los de autenticación. Estilos en línea y maquetación con tablas, porque los clientes de correo no aplican hojas de estilo. Auxiliares: `<x-mail.boton>` y `<x-mail.pedido-detalle>`
