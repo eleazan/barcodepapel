@@ -42,7 +42,8 @@ class ReprocessBookIsbnCommand extends Command
 
         $query->chunkById(200, function ($products) use ($bar) {
             foreach ($products as $product) {
-                FetchBookDataFromIsbn::dispatch($product);
+                // refresh: rehace la ficha aunque el libro ya tenga portada
+                FetchBookDataFromIsbn::dispatch($product, true);
                 $bar->advance();
             }
         });

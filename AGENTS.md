@@ -40,6 +40,11 @@ php artisan make:model Nombre -mfc  # Modelo + migración + factory + controller
 php artisan make:controller NombreController
 php artisan route:list
 
+# Tareas en segundo plano (ver /admin/jobs)
+php artisan queue:work                            # Sin esto no avanza ningún lote
+php artisan jobs:run                              # Lista las tareas y sus pendientes
+php artisan jobs:run portadas-libros --cantidad=200
+
 # Seeders
 php artisan db:seed --class=AdminUserSeeder       # Admin desde ADMIN_EMAIL / ADMIN_PASSWORD
 php artisan db:seed --class=ProductionSeeder      # Catálogo real (5.246 productos)
@@ -75,7 +80,7 @@ app/
     Controllers/
       Auth/               # Controladores de autenticación
       Admin/              # CRUD admin: Products, Orders, Categories, DeliveryZones,
-                          # NonWorkingDays, Customers, NotificationLog
+                          # NonWorkingDays, Customers, NotificationLog, Verial, Jobs
     Requests/Admin/       # Form Requests del admin
   Models/
     Traits/HasAudit.php   # Trait de auditoría — añadir `use HasAudit` a cualquier modelo
@@ -84,16 +89,24 @@ app/
   Rules/                  # Reglas de validación (CodigoPostalConReparto)
   View/Components/Store/  # Componentes Blade de clase (CartBadge)
   Services/
+    Books/                # Portadas y fichas por ISBN (BookEnricher, GoogleBooksQuota, CoverOutcome)
     Cart/                 # Carrito en sesión (Cart, CartItem)
     Checkout/             # PlaceOrderService: carrito → pedido
     Delivery/             # DeliveryZoneResolver (CP → zona y tarifa) y DeliveryCalendar (días de reparto)
+    Jobs/                 # Tareas por lotes del panel /admin/jobs
+      BatchTask.php               # Interface de tarea
+      ResettableTask.php          # Interface opcional: reintentar lo descartado
+      BatchTaskRegistry.php       # Registro (se rellena en AppServiceProvider)
+      BatchHistory.php            # Lectura de job_batches
+      Tasks/BookCoverTask.php     # Portadas de libros (implementada)
     Notifications/        # Sistema de notificaciones extensible por canales
       NotificationChannel.php       # Interface para canales
       OrderNotificationService.php  # Orquestador: send, sendAll, resend
       Channels/EmailChannel.php     # Canal email (implementado)
     Verial/               # Cliente e integración con el ERP (sync catálogo, stock, pedidos)
-  Jobs/                   # Verial/ (import, stock, envío de pedidos) y Csv/ (cargas masivas)
-  Console/Commands/       # verial:* , import:books-csv, books:reprocess
+  Jobs/                   # FetchBookDataFromIsbn (portadas), Verial/ (import, stock, envío de
+                          # pedidos) y Csv/ (cargas masivas)
+  Console/Commands/       # verial:* , jobs:run, import:books-csv, books:reprocess
   Providers/              # AppServiceProvider (HTTPS forzado en prod, registro de canales y servicios scoped)
 config/                   # Configuración Laravel
 database/migrations/      # Migraciones de BD
@@ -106,6 +119,8 @@ resources/
       delivery-zones/     # CRUD zonas de reparto
       non-working-days/   # CRUD festivos y cierres
       customers/          # Ficha de cliente: pedidos y avisos enviados
+      jobs/               # Panel de tareas en segundo plano
+      verial/             # Panel del conector con el ERP
       dashboard.blade.php
     errors/               # Páginas de error personalizadas (403, 404, 500)
     auth/                 # Vistas de autenticación
@@ -186,6 +201,26 @@ tests/
 - **Panel:** `/admin/verial` (`Admin\VerialSyncController`) para lanzar sincronizaciones y subir CSV a mano.
 - **Campos en `orders`:** `verial_pedido_id`, `verial_referencia`, `verial_estado`, `verial_enviado_at`. En `order_items` y `products`, `verial_id`.
 - Notas de diseño de la integración en `PLAN_CONECTOR.md`.
+
+## Tareas en segundo plano (/admin/jobs)
+
+- **Panel:** `/admin/jobs` (`Admin\JobController`, vista `admin/jobs/index`) — pendientes de cada tarea, lanzar un lote con la cantidad que se quiera, barra de progreso del lote en curso, cancelarlo e historial de los últimos lotes. Enlazado en el sidebar bajo «Herramientas», junto al conector Verial
+- **Arquitectura:** interface `App\Services\Jobs\BatchTask` → tareas registradas en `AppServiceProvider` a través de `BatchTaskRegistry`. Mismo patrón que los canales de notificación: **añadir una tarea es implementar la interfaz y registrarla**, sin tocar el panel. Si además implementa `ResettableTask`, el panel ofrece el botón de reintentar lo descartado
+- **Progreso:** `Bus::batch()` con el nombre del lote igual a la clave de la tarea. `App\Services\Jobs\BatchHistory` lee `job_batches` por ese nombre, así que no hace falta ninguna tabla propia
+- **Ritmo:** el lote se encola escalonado (`->delay()` por bloques de `per_minute`), que es determinista y no gasta reintentos del job. El middleware `RateLimited('google-books')` queda como red de seguridad para los despachos desde CLI
+- **Un lote a la vez por tarea:** ni el panel ni `jobs:run` lanzan otro mientras haya uno sin terminar, para no duplicar peticiones a la API
+- **Desde consola:** `php artisan jobs:run` lista las tareas con sus pendientes; `php artisan jobs:run portadas-libros --cantidad=200` lanza el lote. Nada avanza sin un `queue:work` en marcha (el panel lo advierte)
+- **No está en el scheduler a propósito:** consume cuota de una API externa, así que se lanza a mano
+
+### Tarea «portadas-libros»
+
+- **`App\Services\Jobs\Tasks\BookCoverTask`** + `App\Jobs\FetchBookDataFromIsbn` + `App\Services\Books\BookEnricher`
+- **Dos fuentes:** Google Books por ISBN (portada y metadatos: título, subtítulo, autores, editorial, páginas, año) y **OpenLibrary como respaldo**, que no tiene clave ni cuota y solo se consulta cuando Google no trae portada
+- **La portada se descarga al disco público** como `covers/{isbn}.jpg`, nunca se enlaza a `books.google.com`. Un libro cuya `products.image` sea todavía una URL remota cuenta como pendiente, para traerla a local. Al conseguir portada el producto se activa
+- **El título solo se sustituye si Google lo da en español o catalán**; en otro idioma se respeta el del ERP
+- **Ningún libro se procesa dos veces:** cada intento queda marcado en `product_book_details` (`cover_source`, `cover_fetched_at`, `cover_attempts`, `cover_attempted_at`). Con portada, archivado; sin ella, se suma un intento hasta `ProductBookDetail::MAX_COVER_ATTEMPTS` (3), y entonces pasa a **descartado**. Ni los archivados ni los descartados vuelven a la cola: los descartados solo con el botón «Reintentar los descartados», que pone el contador a cero
+- **Cuota:** `App\Services\Books\GoogleBooksQuota` cuenta en caché las peticiones del día (`GOOGLE_BOOKS_DAILY_QUOTA`, 1.000 por defecto) y el panel no deja encolar más libros de los que quedan. Un 429 o la cuota agotada **no cuentan como intento**: el job se libera y vuelve cuando la API se renueva
+- **Refresco de fichas:** `books:reprocess` despacha el job con `refresh: true`, que vuelve a pedir los metadatos aunque el libro ya tenga portada (y no la toca). Es lo que arregla los títulos en mayúsculas que llegaron del CSV
 
 ## Correo
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
+use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\NonWorkingDayController;
 use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Admin\OrderController;
@@ -187,4 +188,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('verial/sync-order-status', [VerialSyncController::class, 'syncOrderStatus'])->name('verial.sync-order-status');
     Route::post('verial/upload-stock', [VerialSyncController::class, 'uploadStockCsv'])->name('verial.upload-stock');
     Route::post('verial/upload-prices', [VerialSyncController::class, 'uploadPricesCsv'])->name('verial.upload-prices');
+
+    // Tareas en segundo plano
+    Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::post('jobs/{task}/run', [JobController::class, 'run'])->name('jobs.run');
+    Route::post('jobs/{task}/reset', [JobController::class, 'reset'])->name('jobs.reset');
+    Route::post('jobs/{task}/batches/{batch}/cancel', [JobController::class, 'cancel'])->name('jobs.cancel');
 });
