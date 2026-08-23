@@ -118,6 +118,28 @@ class OrderNotificationService
     }
 
     /**
+     * Aviso interno a la librería de que ha entrado un pedido por la web.
+     *
+     * Va al buzón de config/tienda.php, no al del cliente, y queda registrado
+     * en el historial del pedido como cualquier otro envío.
+     */
+    public function notifyStore(Order $order): ?NotificationLog
+    {
+        $buzon = config('tienda.email');
+
+        if (empty($buzon)) {
+            return null;
+        }
+
+        return $this->send(
+            order: $order,
+            channelId: NotificationLog::CHANNEL_EMAIL,
+            event: NotificationLog::EVENT_STORE_COPY,
+            recipient: $buzon,
+        );
+    }
+
+    /**
      * Resend a previous notification, optionally with a corrected recipient.
      */
     public function resend(NotificationLog $log, ?string $newRecipient = null): NotificationLog
@@ -134,7 +156,10 @@ class OrderNotificationService
     private function createLog(Order $order, string $channel, string $recipient, string $event, array $data): NotificationLog
     {
         return NotificationLog::create([
-            'order_id'      => $order->id,
+            'order_id' => $order->id,
+            // Si el pedido es de un cliente registrado, el aviso aparece también
+            // en su ficha.
+            'user_id'       => $order->user_id,
             'channel'       => $channel,
             'recipient'     => $recipient,
             'event'         => $event,

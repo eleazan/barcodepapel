@@ -215,10 +215,34 @@
                                 </div>
                             </dl>
 
-                            <a href="{{ route('checkout.show') }}" class="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-600 text-white font-medium rounded-full hover:bg-brand-700 transition-all hover:shadow-lg hover:shadow-brand-600/25">
-                                Finalizar pedido
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                            </a>
+                            @auth
+                                @if (auth()->user()->hasVerifiedEmail())
+                                    <a href="{{ route('checkout.show') }}" class="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-600 text-white font-medium rounded-full hover:bg-brand-700 transition-all hover:shadow-lg hover:shadow-brand-600/25">
+                                        Finalizar pedido
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                                    </a>
+                                @else
+                                    <div class="mt-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                                        Te falta <strong>confirmar tu correo</strong> para poder pedir. Busca el mensaje que te enviamos al registrarte.
+                                    </div>
+                                    <a href="{{ route('verification.notice') }}" class="mt-3 w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-600 text-white font-medium rounded-full hover:bg-brand-700 transition-all">
+                                        Reenviar el correo de confirmaci&oacute;n
+                                    </a>
+                                @endif
+                            @else
+                                {{-- El pedido va siempre asociado a una cuenta --}}
+                                <div class="mt-6 p-4 rounded-2xl bg-brand-50 border border-brand-100 text-sm text-gray-600">
+                                    Para hacer el pedido necesitas una cuenta. As&iacute; guardamos tus datos de entrega y puedes
+                                    seguir el estado de tus compras.
+                                </div>
+                                <a href="{{ route('login') }}" class="mt-3 w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-brand-600 text-white font-medium rounded-full hover:bg-brand-700 transition-all hover:shadow-lg hover:shadow-brand-600/25">
+                                    Iniciar sesi&oacute;n y finalizar
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                                </a>
+                                <a href="{{ route('register') }}" class="mt-3 block text-center text-sm text-brand-700 hover:underline">
+                                    No tengo cuenta, quiero crear una
+                                </a>
+                            @endauth
 
                             <ul class="mt-6 space-y-2.5 text-xs text-gray-500">
                                 <li class="flex items-start gap-2">

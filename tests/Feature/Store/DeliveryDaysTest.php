@@ -6,6 +6,7 @@ use App\Models\DeliveryZone;
 use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Services\Delivery\DeliveryZoneResolver;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -18,6 +19,8 @@ function unLunes(): Carbon
 
 beforeEach(function () {
     Mail::fake();
+    // Comprar exige cuenta con el correo verificado.
+    test()->actingAs(User::factory()->create(['email_verified_at' => now()]));
     Carbon::setTestNow(unLunes());
 });
 
@@ -190,7 +193,7 @@ describe('la fecha prevista viaja con el pedido', function () {
             'acepta_condiciones' => '1',
         ]);
 
-        $log = NotificationLog::latest('id')->first();
+        $log = NotificationLog::where('event', NotificationLog::EVENT_ORDER_CREATED)->first();
 
         expect($log->body)->toContain('te lo llevamos el jueves, 27 de agosto');
     });

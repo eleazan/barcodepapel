@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     Mail::fake();
 
+    // Comprar exige cuenta con el correo verificado.
+    $this->cliente = User::factory()->create([
+        'email'             => 'marta@example.com',
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($this->cliente);
+
     $this->zona = DeliveryZone::factory()->create([
         'postal_code'  => '07800',
         'neighborhood' => 'Vara de Rey',
@@ -174,14 +182,14 @@ it('valida los datos de contacto y entrega', function () {
     ]);
 });
 
-it('acepta pedidos sin email', function () {
+it('usa el correo de la cuenta si el formulario llega sin email', function () {
     $product = Product::factory()->create(['stock' => 5]);
     $this->post(route('cart.add', $product), ['quantity' => 1]);
 
     $this->post(route('checkout.store'), datosPedido(['customer_email' => null]))
         ->assertSessionHasNoErrors();
 
-    expect(Order::latest('id')->first()->customer_email)->toBeNull();
+    expect(Order::latest('id')->first()->customer_email)->toBe($this->cliente->email);
 });
 
 it('no crea el pedido si el carrito está vacío', function () {
@@ -214,33 +222,76 @@ it('registra el acuse de recibo al cliente', function () {
 
     $this->post(route('checkout.store'), datosPedido());
 
-    $log = NotificationLog::latest('id')->first();
+    // Tras el pedido hay dos envíos: el acuse al cliente y el aviso interno.
+    $log = NotificationLog::where('event', NotificationLog::EVENT_ORDER_CREATED)->first();
 
     expect($log)->not->toBeNull();
-    expect($log->event)->toBe(NotificationLog::EVENT_ORDER_CREATED);
     expect($log->channel)->toBe(NotificationLog::CHANNEL_EMAIL);
     expect($log->recipient)->toBe('marta@example.com');
     expect($log->status)->toBe(NotificationLog::STATUS_SENT);
 });
 
 it('asocia el pedido al usuario autenticado', function () {
-    $user    = User::factory()->create();
     $product = Product::factory()->create(['stock' => 5]);
 
-    $this->actingAs($user);
     $this->post(route('cart.add', $product), ['quantity' => 1]);
     $this->post(route('checkout.store'), datosPedido());
 
-    expect(Order::latest('id')->first()->user_id)->toBe($user->id);
+    expect(Order::latest('id')->first()->user_id)->toBe($this->cliente->id);
 });
 
-it('deja el pedido sin usuario cuando el cliente compra como invitado', function () {
-    $product = Product::factory()->create(['stock' => 5]);
-    $this->post(route('cart.add', $product), ['quantity' => 1]);
+describe('comprar exige cuenta', function () {
+    it('manda a iniciar sesión a quien no la tiene', function () {
+        auth()->logout();
 
-    $this->post(route('checkout.store'), datosPedido());
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
 
-    expect(Order::latest('id')->first()->user_id)->toBeNull();
+        $this->get(route('checkout.show'))->assertRedirect(route('login'));
+
+        $this->post(route('checkout.store'), datosPedido())->assertRedirect(route('login'));
+
+        expect(Order::count())->toBe(0);
+    });
+
+    it('no deja comprar mientras el correo no esté confirmado', function () {
+        $this->actingAs(User::factory()->unverified()->create());
+
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
+
+        $this->get(route('checkout.show'))->assertRedirect(route('verification.notice'));
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertRedirect(route('verification.notice'));
+
+        expect(Order::count())->toBe(0);
+    });
+
+    it('deja llenar el carrito sin haber iniciado sesión', function () {
+        auth()->logout();
+
+        $product = Product::factory()->create(['stock' => 5]);
+
+        $this->post(route('cart.add', $product), ['quantity' => 2])->assertRedirect();
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('Iniciar sesi&oacute;n y finalizar', false);
+    });
+
+    it('conserva el carrito al iniciar sesión', function () {
+        auth()->logout();
+
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 2]);
+
+        $this->post(route('login'), [
+            'email'    => $this->cliente->email,
+            'password' => 'password',
+        ]);
+
+        expect(session('carrito'))->toBe([$product->id => 2]);
+    });
 });
 
 describe('confirmación del pedido', function () {

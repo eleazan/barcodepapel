@@ -115,7 +115,8 @@ class PlaceOrderService
     }
 
     /**
-     * Acuse de recibo al cliente. Un fallo de correo no invalida el pedido.
+     * Acuse de recibo al cliente y aviso a la librería. Un fallo de correo no
+     * invalida el pedido: ya está confirmado y el stock, descontado.
      */
     private function notifyCustomer(Order $order): void
     {
@@ -123,6 +124,15 @@ class PlaceOrderService
             $this->notifications->sendAll($order, NotificationLog::EVENT_ORDER_CREATED);
         } catch (\Throwable $e) {
             Log::warning('No se pudo notificar la confirmación del pedido', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $this->notifications->notifyStore($order);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo avisar a la librería del pedido nuevo', [
                 'order_id' => $order->id,
                 'error'    => $e->getMessage(),
             ]);

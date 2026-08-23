@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
 use App\Http\Controllers\Admin\NonWorkingDayController;
 use App\Http\Controllers\Admin\NotificationLogController;
@@ -137,10 +138,16 @@ Route::prefix('carrito')->name('cart.')->group(function () {
 Route::get('/comprobar-codigo-postal', [CartController::class, 'checkPostalCode'])
     ->name('delivery.check');
 
-Route::get('/finalizar-pedido', [CheckoutController::class, 'show'])->name('checkout.show');
-Route::post('/finalizar-pedido', [CheckoutController::class, 'store'])
-    ->middleware('throttle:10,1')
-    ->name('checkout.store');
+// Comprar exige cuenta con el correo verificado: el pedido queda asociado a un
+// cliente y así se puede seguir desde su ficha. El carrito sigue siendo libre.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/finalizar-pedido', [CheckoutController::class, 'show'])->name('checkout.show');
+    Route::post('/finalizar-pedido', [CheckoutController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('checkout.store');
+});
+
+// Los pedidos antiguos de invitados se siguen consultando por sesión.
 Route::get('/pedido/{orderNumber}', [CheckoutController::class, 'confirmation'])
     ->name('checkout.confirmation');
 
@@ -160,6 +167,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('orders/{order}/pdf', [OrderController::class, 'pdf'])->name('orders.pdf');
     Route::resource('delivery-zones', DeliveryZoneController::class)->except('show');
     Route::resource('non-working-days', NonWorkingDayController::class)->except('show');
+
+    Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::resource('posts', AdminPostController::class)->except('show');
 
     // Notifications

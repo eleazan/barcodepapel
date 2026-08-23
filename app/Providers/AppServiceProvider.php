@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\LogSentNotification;
 use App\Listeners\RegisterClientInVerial;
+use App\Listeners\SendWelcomeEmail;
 use App\Services\Cart\Cart;
 use App\Services\Delivery\DeliveryCalendar;
 use App\Services\Notifications\Channels\EmailChannel;
 use App\Services\Notifications\OrderNotificationService;
 use App\Services\Verial\VerialClient;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -59,6 +63,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Registro de cliente Verial al registrarse un usuario
         Event::listen(Registered::class, RegisterClientInVerial::class);
+
+        // Bienvenida en cuanto el cliente confirma su correo
+        Event::listen(Verified::class, SendWelcomeEmail::class);
+
+        // Los avisos de cuenta quedan en el mismo historial que los de pedido
+        Event::listen(NotificationSent::class, LogSentNotification::class);
 
         // Force HTTPS in production
         if ($this->app->environment('production')) {

@@ -113,12 +113,15 @@
                                 </div>
 
                                 <div>
-                                    <label for="customer_email" class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                                    <label for="customer_email" class="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Email <span class="text-red-500">*</span>
+                                    </label>
                                     <input
                                         id="customer_email"
                                         name="customer_email"
                                         type="email"
                                         value="{{ old('customer_email', $usuario?->email) }}"
+                                        required
                                         autocomplete="email"
                                         maxlength="255"
                                         class="w-full rounded-xl border-gray-200 text-sm focus:border-brand-400 focus:ring-brand-400 @error('customer_email') border-red-300 @enderror"
@@ -126,7 +129,7 @@
                                     @error('customer_email')
                                         <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                                     @else
-                                        <p class="mt-1.5 text-xs text-gray-500">Opcional. Si lo indicas, te enviamos la confirmaci&oacute;n.</p>
+                                        <p class="mt-1.5 text-xs text-gray-500">Te enviamos aqu&iacute; la confirmaci&oacute;n del pedido.</p>
                                     @enderror
                                 </div>
                             </div>

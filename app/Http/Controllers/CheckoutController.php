@@ -82,7 +82,8 @@ class CheckoutController extends Controller
 
         $request->session()->forget(self::SESSION_SNAPSHOT);
 
-        // Permite ver la confirmación a quien acaba de comprar, sin necesidad de cuenta.
+        // Referencia por sesión, además de por `user_id`: así el cliente ve la
+        // confirmación aunque cierre sesión justo después de comprar.
         $request->session()->push(self::SESSION_ORDERS, $order->id);
 
         return redirect()->route('checkout.confirmation', $order->order_number);

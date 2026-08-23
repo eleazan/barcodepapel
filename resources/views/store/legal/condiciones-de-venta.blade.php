@@ -42,7 +42,14 @@
     <p>
         Para realizar un pedido debes ser mayor de 18 a&ntilde;os y facilitar datos veraces, en especial la
         direcci&oacute;n de entrega y un tel&eacute;fono de contacto operativo, que usamos para coordinar el reparto.
-        No es necesario registrarse: puedes comprar como invitado.
+    </p>
+
+    <p>
+        <strong>Comprar requiere una cuenta con el correo confirmado.</strong> Puedes navegar por el
+        cat&aacute;logo y llenar el carrito libremente, pero para finalizar el pedido hay que iniciar
+        sesi&oacute;n. De este modo el pedido queda asociado a ti, puedes consultar su estado y no tienes que
+        volver a escribir tus datos de entrega en cada compra. Crear la cuenta es gratuito y solo pedimos
+        nombre, correo y contrase&ntilde;a.
     </p>
 
     <h2>4. Productos y disponibilidad</h2>
@@ -73,9 +80,10 @@
 
     <ol>
         <li>A&ntilde;ades los productos al carrito y compruebas que tu c&oacute;digo postal tiene reparto.</li>
+        <li>Inicias sesi&oacute;n con tu cuenta (o la creas, si es tu primera compra).</li>
         <li>Rellenas tus datos de contacto y entrega y aceptas estas condiciones.</li>
         <li>Al pulsar <em>Confirmar pedido</em> queda registrado con estado <strong>pendiente</strong> y se te asigna un n&uacute;mero de pedido.</li>
-        <li>Si nos has dejado tu correo, recibes un acuse de recibo con el detalle. Ese correo confirma la recepci&oacute;n del pedido y perfecciona el contrato.</li>
+        <li>Recibes en tu correo un acuse de recibo con el detalle. Ese correo confirma la recepci&oacute;n del pedido y perfecciona el contrato.</li>
         <li>Preparamos el pedido y te contactamos para acordar el momento de la entrega.</li>
     </ol>
 

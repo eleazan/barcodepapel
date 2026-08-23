@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+// La tienda envía su propia notificación, que extiende la de Laravel.
+use App\Notifications\ResetPasswordNotification as ResetPassword;
 use Illuminate\Support\Facades\Notification;
 
 test('reset password link screen can be rendered', function () {

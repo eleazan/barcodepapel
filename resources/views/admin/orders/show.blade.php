@@ -85,6 +85,18 @@
                         <dt class="text-gray-400 text-xs">Nombre</dt>
                         <dd class="text-gray-700 font-medium">{{ $order->customer_name }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-gray-400 text-xs">Cuenta</dt>
+                        <dd>
+                            @if ($order->user)
+                                <a href="{{ route('admin.customers.show', $order->user) }}" class="text-sky-600 hover:underline">
+                                    Ver ficha del cliente
+                                </a>
+                            @else
+                                <span class="text-gray-400">Compró como invitado</span>
+                            @endif
+                        </dd>
+                    </div>
                 </dl>
 
                 {{-- View mode --}}
@@ -208,6 +220,7 @@
                         <thead>
                             <tr class="border-b border-sky-50 bg-sky-50/30">
                                 <x-admin.th>Fecha</x-admin.th>
+                                <x-admin.th>Tipo</x-admin.th>
                                 <x-admin.th>Canal</x-admin.th>
                                 <x-admin.th>Destinatario</x-admin.th>
                                 <x-admin.th>Asunto</x-admin.th>
@@ -220,6 +233,9 @@
                                 <tr class="hover:bg-sky-50/30 transition-colors" x-data="{ showResend: false, showBody: false }">
                                     <x-admin.td>
                                         <span class="text-gray-500 text-xs">{{ $log->created_at->format('d/m/Y H:i') }}</span>
+                                    </x-admin.td>
+                                    <x-admin.td>
+                                        <span class="text-xs font-medium text-gray-600">{{ $log->eventLabel() }}</span>
                                     </x-admin.td>
                                     <x-admin.td>
                                         <span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
@@ -260,13 +276,13 @@
                                 </tr>
                                 {{-- Expandable body --}}
                                 <tr x-show="showBody" x-cloak>
-                                    <td colspan="6" class="px-6 py-3 bg-gray-50">
+                                    <td colspan="7" class="px-6 py-3 bg-gray-50">
                                         <pre class="text-xs text-gray-600 whitespace-pre-wrap font-sans">{{ $log->body }}</pre>
                                     </td>
                                 </tr>
                                 {{-- Resend form row --}}
                                 <tr x-show="showResend" x-cloak>
-                                    <td colspan="6" class="px-6 py-3 bg-sky-50/40">
+                                    <td colspan="7" class="px-6 py-3 bg-sky-50/40">
                                         <form method="POST" action="{{ route('admin.orders.notifications.resend', [$order, $log]) }}" class="flex items-center gap-3">
                                             @csrf
                                             <span class="text-xs text-gray-500 shrink-0">Reenviar a:</span>

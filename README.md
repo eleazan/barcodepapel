@@ -28,8 +28,9 @@ El catálogo y el stock se sincronizan con **Verial**, el ERP de la librería.
   lo agotado o despublicado y ajusta cantidades al stock real.
 - Comprobador de código postal: solo se puede comprar donde la librería
   reparte.
-- Checkout sin registro, con fecha de entrega calculada según los días de
-  reparto de la zona y los festivos.
+- Checkout con cuenta obligatoria —el carrito es libre, pero para finalizar hay
+  que iniciar sesión con el correo confirmado—, con fecha de entrega calculada
+  según los días de reparto de la zona y los festivos.
 - Blog y páginas legales (aviso legal, privacidad, condiciones de venta).
 
 **Panel de administración** (`/admin`, solo usuarios con `is_admin`)
@@ -113,6 +114,50 @@ Los datos de la librería —dirección, teléfono, email, horario, coordenadas 
 datos fiscales del titular— viven en `config/tienda.php`, no en variables de
 entorno. Son la fuente única para el JSON-LD, el footer, la página de contacto,
 las páginas legales, el albarán y la firma de los correos.
+
+---
+
+## Correo
+
+En desarrollo no hay que configurar nada: Docker Compose manda todo el correo
+a Mailpit, `http://localhost:8025`.
+
+En producción la tienda envía por **SMTP de Gmail con una contraseña de
+aplicación**:
+
+1. Activa la verificación en dos pasos en la cuenta de Google.
+2. Genera una contraseña de aplicación en
+   [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+   Son 16 caracteres; se pegan **sin espacios**.
+3. Rellena las variables:
+
+   ```env
+   MAIL_MAILER=smtp
+   MAIL_SCHEME=smtp
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=la-cuenta@gmail.com
+   MAIL_PASSWORD=la-contraseña-de-aplicación
+   MAIL_FROM_ADDRESS=la-cuenta@gmail.com
+   MAIL_FROM_NAME="Barco de Papel"
+   ```
+
+4. Comprueba que funciona sin tener que hacer un pedido:
+
+   ```bash
+   php artisan mail:test tu-correo@example.com
+   ```
+
+**Sobre el remitente.** Gmail solo deja enviar desde la propia cuenta o desde
+una dirección verificada en *Configuración → Cuentas → «Enviar correo como»*.
+Si pones un `MAIL_FROM_ADDRESS` que no sea una de ellas, Gmail lo reescribe y
+el cliente ve un «enviado en nombre de». Las respuestas van siempre al
+`tienda.email` de `config/tienda.php`, que se envía como `Reply-To`.
+
+**Límites.** Una cuenta personal de Gmail admite unos 500 correos al día. De
+momento sobra, pero si el volumen crece —o si hacen falta registros de entrega
+y rebotes— toca pasar a un proveedor transaccional (Resend, Brevo, Postmark,
+SES) con el dominio verificado. Solo cambian las variables de entorno.
 
 ---
 

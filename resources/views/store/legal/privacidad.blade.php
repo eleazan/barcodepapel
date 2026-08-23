@@ -33,9 +33,9 @@
     <h2>2. Qu&eacute; datos tratamos</h2>
 
     <ul>
-        <li><strong>Datos de pedido:</strong> nombre y apellidos, tel&eacute;fono, correo electr&oacute;nico (opcional), direcci&oacute;n de entrega, c&oacute;digo postal e indicaciones para el reparto.</li>
+        <li><strong>Datos de pedido:</strong> nombre y apellidos, tel&eacute;fono, correo electr&oacute;nico, direcci&oacute;n de entrega, c&oacute;digo postal e indicaciones para el reparto.</li>
         <li><strong>Datos de la compra:</strong> productos, cantidades, importes y estado del pedido.</li>
-        <li><strong>Datos de cuenta,</strong> si decides registrarte: nombre, correo electr&oacute;nico y contrase&ntilde;a cifrada.</li>
+        <li><strong>Datos de cuenta:</strong> nombre, correo electr&oacute;nico y contrase&ntilde;a cifrada. Hacen falta para comprar, porque cada pedido queda asociado a una cuenta.</li>
         <li><strong>Datos de navegaci&oacute;n:</strong> los estrictamente necesarios para que el sitio funcione (sesi&oacute;n y carrito), adem&aacute;s de los que autorices en el aviso de cookies.</li>
     </ul>
 
@@ -61,7 +61,7 @@
             <em>Base jur&iacute;dica:</em> ejecuci&oacute;n del contrato e inter&eacute;s leg&iacute;timo en atender al cliente (art. 6.1.b y 6.1.f RGPD).
         </li>
         <li>
-            <strong>Gestionar tu cuenta de usuario,</strong> si te registras. <br>
+            <strong>Gestionar tu cuenta de usuario,</strong> necesaria para comprar. <br>
             <em>Base jur&iacute;dica:</em> ejecuci&oacute;n del contrato a tu solicitud (art. 6.1.b RGPD).
         </li>
     </ul>

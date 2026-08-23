@@ -6,6 +6,7 @@ use App\Models\DeliveryZone;
 use App\Models\NonWorkingDay;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Services\Delivery\DeliveryCalendar;
 use Database\Seeders\NonWorkingDaySeeder;
 use Illuminate\Support\Carbon;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Mail;
 
 beforeEach(function () {
     Mail::fake();
+    // Comprar exige cuenta con el correo verificado.
+    test()->actingAs(User::factory()->create(['email_verified_at' => now()]));
     // Lunes 24 de agosto de 2026.
     Carbon::setTestNow(Carbon::parse('2026-08-24 10:00:00'));
 });

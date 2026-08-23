@@ -74,7 +74,8 @@ app/
   Http/
     Controllers/
       Auth/               # Controladores de autenticación
-      Admin/              # CRUD admin: Products, Orders, Categories, DeliveryZones, NonWorkingDays, NotificationLog
+      Admin/              # CRUD admin: Products, Orders, Categories, DeliveryZones,
+                          # NonWorkingDays, Customers, NotificationLog
     Requests/Admin/       # Form Requests del admin
   Models/
     Traits/HasAudit.php   # Trait de auditoría — añadir `use HasAudit` a cualquier modelo
@@ -104,6 +105,7 @@ resources/
       orders/             # CRUD pedidos (con show)
       delivery-zones/     # CRUD zonas de reparto
       non-working-days/   # CRUD festivos y cierres
+      customers/          # Ficha de cliente: pedidos y avisos enviados
       dashboard.blade.php
     errors/               # Páginas de error personalizadas (403, 404, 500)
     auth/                 # Vistas de autenticación
@@ -157,7 +159,10 @@ tests/
 - **Confirmación del pedido:** `App\Services\Checkout\PlaceOrderService` — transacción con `lockForUpdate()` sobre los productos, descuento de stock, creación de `Order` + `OrderItem`, y `CheckoutException` (con rollback) si el stock no alcanza.
 - **Validación:** `App\Http\Requests\Store\CheckoutRequest` + regla `App\Rules\CodigoPostalConReparto`.
 - **Pago:** no hay pasarela. Se paga en el momento de la entrega.
-- **Acceso a la confirmación:** por sesión para quien acaba de comprar (sin cuenta), por `user_id` para clientes registrados, y para admins. Un tercero recibe 403.
+- **Comprar exige cuenta con el correo verificado.** Las rutas `checkout.show` y `checkout.store` van bajo `auth` + `verified`; el carrito sigue siendo libre para cualquiera. Quien no ha entrado ve en el carrito la invitación a iniciar sesión o registrarse, y quien no ha confirmado el correo, el aviso para reenviarlo. El carrito sobrevive al login porque `session()->regenerate()` conserva los datos
+- **`customer_email` es obligatorio** en el checkout; si el formulario llega sin él se toma el de la cuenta
+- **Los pedidos sin `user_id` siguen existiendo:** los anteriores a exigir cuenta y los que da de alta el admin a mano, que puede seguir creándolos sin cliente registrado. La ficha de cliente los recupera por correo
+- **Acceso a la confirmación:** por sesión —para que el cliente la vea aunque cierre sesión justo después—, por `user_id` y para admins. Un tercero recibe 403.
 - **Rutas:** `/carrito` (index/add/update/remove/clear), `/comprobar-codigo-postal` (JSON), `/finalizar-pedido` (show/store, POST con `throttle:10,1`), `/pedido/{orderNumber}`.
 - **Componentes Alpine:** `postalChecker(endpoint, cpInicial)` y `checkoutForm(...)` en `resources/js/app.js`.
 - **Componente Blade:** `<x-store.cart-badge />` (contador en la cabecera, acepta `mobile`) y `<x-store.flash />` (mensajes flash de la tienda).
@@ -182,14 +187,29 @@ tests/
 - **Campos en `orders`:** `verial_pedido_id`, `verial_referencia`, `verial_estado`, `verial_enviado_at`. En `order_items` y `products`, `verial_id`.
 - Notas de diseño de la integración en `PLAN_CONECTOR.md`.
 
+## Correo
+
+- **Layout único:** `<x-mail.layout>` (`components/mail/layout.blade.php`). **Todo correo que salga de la aplicación lo usa**, incluidos los de autenticación. Estilos en línea y maquetación con tablas, porque los clientes de correo no aplican hojas de estilo. Auxiliares: `<x-mail.boton>` y `<x-mail.pedido-detalle>`
+- **Vistas en `resources/views/emails/`:** `orders/created`, `orders/status`, `orders/store-copy`, `auth/verify`, `auth/reset-password`, `auth/welcome`, y `plain.blade.php` para la alternativa en texto
+- **Los correos de pedido van en HTML y en texto plano.** El texto es además lo que se guarda en `notification_logs.body`, para que el historial se lea sin renderizar nada
+- **Autenticación:** `VerifyEmailNotification`, `ResetPasswordNotification` y `WelcomeNotification` en `app/Notifications/`, enganchadas desde `User::sendEmailVerificationNotification()` / `sendPasswordResetNotification()`. Sustituyen a las plantillas genéricas de Laravel, que salían en inglés y sin marca
+- **La bienvenida se manda al verificar el correo** (evento `Verified` → `SendWelcomeEmail`), no al registrarse, para no soltar dos correos a la vez
+- **Copia a la librería:** al confirmarse un pedido, `OrderNotificationService::notifyStore()` avisa al buzón de `config('tienda.email')` con los datos de contacto y las líneas. Se registra como un envío más, con `event = store_copy`. Solo en pedido nuevo: los cambios de estado los provoca la propia tienda
+- **Reply-To** a `config('tienda.email')` en todos los correos
+- Un fallo de correo nunca tumba la operación: `PlaceOrderService` y `SendWelcomeEmail` capturan y registran en el log
+
 ## Sistema de notificaciones
 
 - **Arquitectura:** interface `NotificationChannel` → canales pluggables registrados en `AppServiceProvider`
 - **Canal activo:** `EmailChannel`. Para añadir WhatsApp/Telegram: crear clase que implemente `NotificationChannel` y registrar en el provider
 - **Servicio:** `OrderNotificationService` — `sendAll()`, `send()`, `resend()`
-- **Registro:** tabla `notification_logs` (order_id, channel, recipient, subject, body, status, error_message, event, metadata, sent_at)
+- **Registro:** tabla `notification_logs` (order_id, **user_id**, channel, recipient, subject, body, status, error_message, event, metadata, sent_at). **`order_id` y `user_id` son opcionales**: los avisos de pedido llevan los dos (si el cliente está registrado) y los de cuenta solo `user_id`
+- **Todo aviso queda registrado, venga de donde venga.** Los de pedido los registra `OrderNotificationService`; los de cuenta —verificación, contraseña, bienvenida— los recoge el listener `LogSentNotification` desde el evento `NotificationSent` de Laravel, sin tocar cada notificación. Los correos de pedido no pasan por ese listener (los envía `EmailChannel` directamente), así que no se duplican
+- **Dónde se ven:** en el pedido (`admin/orders/show`, con reenvío) y en la ficha del cliente (`admin/customers/show`, componente `<x-admin.notification-list>`). La ficha reúne los avisos por `user_id` y los de sus pedidos, incluidos los que hizo como invitado con el mismo correo
 - **Vista:** historial en show pedido, envío manual con selección de canal, reenvío con corrección de destinatario
 - **Contacto editable:** email y teléfono del cliente se pueden corregir inline desde el detalle del pedido
+- **Transporte:** SMTP de Gmail con contraseña de aplicación (la cuenta es personal, no Workspace). El `From` tiene que ser la propia cuenta o una dirección verificada en «Enviar correo como», o Gmail lo reescribe. Todo correo lleva `Reply-To` a `config('tienda.email')` para que las respuestas del cliente lleguen al buzón público. En desarrollo, Docker Compose lo manda todo a Mailpit
+- **Comprobar la configuración:** `php artisan mail:test destinatario@example.com` (`SendTestMailCommand`) — imprime el transporte en uso y envía un correo de prueba sin tocar pedidos
 
 ## Auditoría (HasAudit)
 

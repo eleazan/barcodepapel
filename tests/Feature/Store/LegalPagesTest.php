@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\DeliveryZone;
 use App\Models\Product;
+use App\Models\User;
 
 it('publica el aviso legal', function () {
     $this->get(route('legal'))
@@ -58,6 +59,9 @@ it('enlaza las páginas legales desde el pie de la tienda', function () {
 });
 
 it('enlaza las condiciones y la privacidad desde el checkout', function () {
+    // Llegar al checkout exige cuenta con el correo verificado.
+    $this->actingAs(User::factory()->create(['email_verified_at' => now()]));
+
     DeliveryZone::factory()->create(['postal_code' => '07800', 'is_active' => true]);
     $product = Product::factory()->create(['stock' => 5]);
 
