@@ -1,0 +1,4 @@
+#!/command/with-contenv bash
+# s6 relanza el servicio en cuanto muere. Esta espera evita que un fallo
+# inmediato (base de datos caída, por ejemplo) se convierta en un bucle.
+exec sleep 2

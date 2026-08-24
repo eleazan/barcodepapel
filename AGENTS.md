@@ -41,7 +41,8 @@ php artisan make:controller NombreController
 php artisan route:list
 
 # Tareas en segundo plano (ver /admin/jobs)
-php artisan queue:work                            # Sin esto no avanza ningún lote
+docker compose restart worker                     # Tras tocar un Job: el worker no recarga código
+docker compose logs -f worker                     # Qué está procesando la cola
 php artisan jobs:run                              # Lista las tareas y sus pendientes
 php artisan jobs:run portadas-libros --cantidad=200
 
@@ -209,8 +210,9 @@ tests/
 - **Progreso:** `Bus::batch()` con el nombre del lote igual a la clave de la tarea. `App\Services\Jobs\BatchHistory` lee `job_batches` por ese nombre, así que no hace falta ninguna tabla propia
 - **Ritmo:** el lote se encola escalonado (`->delay()` por bloques de `per_minute`), que es determinista y no gasta reintentos del job. El middleware `RateLimited('google-books')` queda como red de seguridad para los despachos desde CLI
 - **Un lote a la vez por tarea:** ni el panel ni `jobs:run` lanzan otro mientras haya uno sin terminar, para no duplicar peticiones a la API
-- **Desde consola:** `php artisan jobs:run` lista las tareas con sus pendientes; `php artisan jobs:run portadas-libros --cantidad=200` lanza el lote. Nada avanza sin un `queue:work` en marcha (el panel lo advierte)
+- **Desde consola:** `php artisan jobs:run` lista las tareas con sus pendientes; `php artisan jobs:run portadas-libros --cantidad=200` lanza el lote. Nada avanza sin un worker en marcha (el panel lo advierte)
 - **No está en el scheduler a propósito:** consume cuota de una API externa, así que se lanza a mano
+- **Quién mueve la cola:** en local, los contenedores `worker` y `scheduler` del compose (hay que reiniciar el worker tras tocar un Job, porque no recarga el código montado). En producción, dos servicios de **s6-overlay** definidos en `docker/s6/` y dados de alta en el `Dockerfile`, que corren dentro del propio contenedor de la aplicación: `queue-worker` (`queue:work`, se recicla cada hora con `--max-time`) y `scheduler` (`schedule:work`). **No van como comando de post-despliegue de Coolify**, que se ejecuta una vez y bloquearía el deploy. Se apagan con `QUEUE_WORKER_ENABLED=false` / `SCHEDULER_ENABLED=false` si algún día pasan a un recurso propio
 
 ### Tarea «portadas-libros»
 

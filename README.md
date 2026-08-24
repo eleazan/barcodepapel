@@ -14,7 +14,7 @@ El catálogo y el stock se sincronizan con **Verial**, el ERP de la librería.
 | Build | Vite 5 |
 | Tests | Pest |
 | Estilo | Laravel Pint (preset `laravel`, `strict_types` obligatorio) |
-| Contenedor | Docker (PHP-FPM + Nginx + Supervisor) |
+| Contenedor | Docker (`serversideup/php`: PHP-FPM + Nginx + s6-overlay) |
 | Despliegue | Coolify |
 
 ---
@@ -50,6 +50,16 @@ docker compose up -d          # app :8080 · vite :5173 · mysql :3307 · mailpi
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate
 docker compose exec app php artisan storage:link
+```
+
+El compose levanta además un contenedor `worker` (cola) y otro `scheduler`
+(tareas programadas). Van aparte del contenedor de la aplicación porque el
+código está montado por volumen y un worker en marcha no recoge los cambios:
+después de tocar un job hay que reiniciarlo.
+
+```bash
+docker compose restart worker
+docker compose logs -f worker
 ```
 
 Datos iniciales:
@@ -163,7 +173,8 @@ SES) con el dominio verificado. Solo cambian las variables de entorno.
 
 ## Sincronización con Verial
 
-Tareas programadas (`routes/console.php`, requieren `schedule:run` cada minuto):
+Tareas programadas (`routes/console.php`, las ejecuta el servicio `scheduler`
+descrito en [Colas y tareas programadas](#colas-y-tareas-programadas)):
 
 | Comando | Frecuencia |
 |---------|-----------|
@@ -178,16 +189,64 @@ momento: entra en Verial cuando el administrador lo marca como `preparado`.
 
 ---
 
+## Colas y tareas programadas
+
+Hay trabajo que no ocurre durante la petición y necesita un worker: los lotes de
+`/admin/jobs`, las cargas de stock y precios por CSV y —lo más importante— el
+**envío de pedidos a Verial**, que se encola al marcar un pedido como
+`preparado`. Sin worker esos pedidos se quedan en la tabla `jobs` y no llegan
+nunca al ERP.
+
+En producción no hace falta un recurso aparte para eso: el contenedor de la
+aplicación arranca por **s6-overlay**, y a los servicios de la imagen base
+(Nginx y PHP-FPM) se suman dos propios, definidos en `docker/s6/`:
+
+| Servicio | Proceso | Qué cubre |
+|----------|---------|-----------|
+| `queue-worker` | `queue:work` | Toda la cola `default` |
+| `scheduler` | `schedule:work` | Las tareas de `routes/console.php` |
+
+Los supervisa s6 igual que a Nginx: arrancan con el contenedor y se relanzan si
+se caen. El worker se recicla cada hora (`--max-time`) para no acumular fugas de
+memoria ni quedarse con código viejo tras un despliegue.
+
+**No se configuran como comando de post-despliegue.** El post-deploy de Coolify
+se ejecuta una vez y el despliegue espera a que termine, así que un proceso que
+no acaba nunca lo bloquearía y moriría con él.
+
+Se afinan por variables de entorno, sin reconstruir la imagen —
+`QUEUE_WORKER_TRIES`, `QUEUE_WORKER_TIMEOUT`, `QUEUE_WORKER_MAX_TIME`,
+`QUEUE_WORKER_QUEUES`—; están documentadas en `.env.example`. Si algún día el
+tráfico justifica mover el worker a un recurso propio, basta
+`QUEUE_WORKER_ENABLED=false` (o `SCHEDULER_ENABLED=false`) para apagar el de
+dentro. Todos los jobs usan la cola `default`: si un lote largo de portadas
+llegara a retrasar el envío de un pedido, la salida es separar esa cola y
+arrancar un segundo worker con `--queue=`.
+
+Para ver qué está haciendo:
+
+```bash
+docker compose logs -f worker            # en local
+# en producción, desde el terminal del contenedor en Coolify:
+s6-rc -a list                            # servicios activos
+php artisan queue:failed                 # jobs que han fallado
+```
+
+---
+
 ## Despliegue en Coolify
 
-1. Nueva aplicación con build pack **Dockerfile**, puerto `80`.
+1. Nueva aplicación con build pack **Dockerfile**, puerto `8080` (es el que
+   expone la imagen y el que escucha Nginx).
 2. Variables de entorno: las de arriba más `APP_ENV=production`,
    `APP_DEBUG=false`, `APP_URL`, credenciales de base de datos, correo SMTP y
    `HEALTH_CHECK_TOKEN`. Genera la clave con `php artisan key:generate --show`.
-3. Health check en `/up`.
-4. Al desplegar, el entrypoint espera a la base de datos, ejecuta
-   `migrate --force`, cachea configuración/rutas/vistas y arranca PHP-FPM,
-   Nginx, dos workers de cola y el scheduler vía Supervisor.
+3. **`AUTORUN_ENABLED=true`** — sin ella la imagen no migra ni cachea la
+   configuración en el arranque, porque viene desactivada de fábrica.
+4. Health check en `/up`.
+5. Al desplegar, el entrypoint espera a la base de datos, ejecuta
+   `migrate --force` y cachea la configuración; después s6 arranca PHP-FPM,
+   Nginx, el worker de cola y el planificador.
 
 > La configuración **no** se cachea durante el build, solo en el arranque del
 > contenedor: en el build todavía no existen las variables de entorno.

@@ -1,0 +1,5 @@
+# Los servicios de s6-overlay son scripts que se ejecutan dentro del
+# contenedor: con CRLF el shebang deja de resolverse y el servicio no arranca.
+# Sin esto, un `core.autocrlf=true` en Windows los rompería en el checkout.
+docker/s6/** text eol=lf
+*.sh text eol=lf
