@@ -65,7 +65,7 @@ class OrderNotificationService
 
         if (! $channel) {
             return $this->createLog($order, $channelId, $recipient ?? '', $event, [
-                'status' => NotificationLog::STATUS_FAILED,
+                'status'        => NotificationLog::STATUS_FAILED,
                 'error_message' => "Canal '{$channelId}' no registrado.",
             ]);
         }
@@ -74,7 +74,7 @@ class OrderNotificationService
 
         if (! $recipient || ! $channel->canSend($order, $recipient)) {
             return $this->createLog($order, $channelId, $recipient ?? '', $event, [
-                'status' => NotificationLog::STATUS_FAILED,
+                'status'        => NotificationLog::STATUS_FAILED,
                 'error_message' => 'Destinatario no válido o no disponible.',
             ]);
         }
@@ -83,16 +83,16 @@ class OrderNotificationService
             $result = $channel->send($order, $recipient, $event, $context);
 
             return $this->createLog($order, $channelId, $recipient, $event, [
-                'subject' => $result['subject'] ?? null,
-                'body' => $result['body'],
-                'status' => NotificationLog::STATUS_SENT,
-                'sent_at' => now(),
+                'subject'  => $result['subject'] ?? null,
+                'body'     => $result['body'],
+                'status'   => NotificationLog::STATUS_SENT,
+                'sent_at'  => now(),
                 'metadata' => $context['metadata'] ?? null,
             ]);
         } catch (\Throwable $e) {
             return $this->createLog($order, $channelId, $recipient, $event, [
-                'body' => 'Error al enviar.',
-                'status' => NotificationLog::STATUS_FAILED,
+                'body'          => 'Error al enviar.',
+                'status'        => NotificationLog::STATUS_FAILED,
                 'error_message' => $e->getMessage(),
             ]);
         }
@@ -118,6 +118,28 @@ class OrderNotificationService
     }
 
     /**
+     * Aviso interno a la librería de que ha entrado un pedido por la web.
+     *
+     * Va al buzón de config/tienda.php, no al del cliente, y queda registrado
+     * en el historial del pedido como cualquier otro envío.
+     */
+    public function notifyStore(Order $order): ?NotificationLog
+    {
+        $buzon = config('tienda.email');
+
+        if (empty($buzon)) {
+            return null;
+        }
+
+        return $this->send(
+            order: $order,
+            channelId: NotificationLog::CHANNEL_EMAIL,
+            event: NotificationLog::EVENT_STORE_COPY,
+            recipient: $buzon,
+        );
+    }
+
+    /**
      * Resend a previous notification, optionally with a corrected recipient.
      */
     public function resend(NotificationLog $log, ?string $newRecipient = null): NotificationLog
@@ -135,15 +157,18 @@ class OrderNotificationService
     {
         return NotificationLog::create([
             'order_id' => $order->id,
-            'channel' => $channel,
-            'recipient' => $recipient,
-            'event' => $event,
-            'subject' => $data['subject'] ?? null,
-            'body' => $data['body'] ?? '',
-            'status' => $data['status'],
+            // Si el pedido es de un cliente registrado, el aviso aparece también
+            // en su ficha.
+            'user_id'       => $order->user_id,
+            'channel'       => $channel,
+            'recipient'     => $recipient,
+            'event'         => $event,
+            'subject'       => $data['subject'] ?? null,
+            'body'          => $data['body']    ?? '',
+            'status'        => $data['status'],
             'error_message' => $data['error_message'] ?? null,
-            'metadata' => $data['metadata'] ?? null,
-            'sent_at' => $data['sent_at'] ?? null,
+            'metadata'      => $data['metadata']      ?? null,
+            'sent_at'       => $data['sent_at']       ?? null,
         ]);
     }
 }

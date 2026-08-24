@@ -52,7 +52,7 @@ return [
 
     'locale'          => env('APP_LOCALE', 'es'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
-    'faker_locale'    => env('APP_FAKER_LOCALE', 'es_MX'),
+    'faker_locale'    => env('APP_FAKER_LOCALE', 'es_ES'),
 
     /*
     |--------------------------------------------------------------------------
@@ -60,8 +60,8 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'cipher' => 'AES-256-CBC',
-    'key'    => env('APP_KEY'),
+    'cipher'        => 'AES-256-CBC',
+    'key'           => env('APP_KEY'),
     'previous_keys' => [
         ...array_filter(
             explode(',', env('APP_PREVIOUS_KEYS', ''))

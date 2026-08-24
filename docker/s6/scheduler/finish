@@ -1,0 +1,3 @@
+#!/command/with-contenv bash
+# Igual que en el worker: un margen antes de relanzar para no entrar en bucle.
+exec sleep 2

@@ -304,9 +304,16 @@
             </div>
 
             {{-- Bottom bar --}}
-            <div class="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-xs text-gray-300">&copy; {{ date('Y') }} Barco de Papel. Todos los derechos reservados.</p>
-                <p class="text-xs text-gray-300">Hecho con amor en Ibiza</p>
+            <div class="mt-12 pt-8 border-t border-gray-800 flex flex-col gap-4">
+                <nav aria-label="Información legal" class="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2">
+                    <a href="{{ route('legal') }}" class="text-xs text-gray-300 hover:text-brand-400 transition-colors">Aviso legal</a>
+                    <a href="{{ route('privacy') }}" class="text-xs text-gray-300 hover:text-brand-400 transition-colors">Pol&iacute;tica de privacidad</a>
+                    <a href="{{ route('terms') }}" class="text-xs text-gray-300 hover:text-brand-400 transition-colors">Condiciones de venta</a>
+                </nav>
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-xs text-gray-300">&copy; {{ date('Y') }} Barco de Papel. Todos los derechos reservados.</p>
+                    <p class="text-xs text-gray-300">Hecho con amor en Ibiza</p>
+                </div>
             </div>
         </div>
     </footer>

@@ -1,0 +1,12 @@
+#!/command/with-contenv bash
+# Planificador de Laravel. schedule:work se queda en primer plano y despierta
+# cada minuto, así que no hace falta cron dentro del contenedor.
+
+cd "${APP_BASE_DIR:-/var/www/html}" || exit 1
+
+if [ "${SCHEDULER_ENABLED:-true}" != "true" ]; then
+    echo "[scheduler] desactivado por SCHEDULER_ENABLED, no se ejecuta ninguna tarea programada"
+    exec sleep infinity
+fi
+
+exec php artisan schedule:work

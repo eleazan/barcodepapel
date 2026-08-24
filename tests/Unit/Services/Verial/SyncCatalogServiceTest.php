@@ -2,15 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductBookDetail;
-use App\Models\VerialSyncLog;
 use App\Services\Verial\SyncCatalogService;
 use App\Services\Verial\VerialClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function makeArticulo(array $overrides = []): array
 {
@@ -129,7 +127,7 @@ describe('SyncCatalogService', function () {
             'http://127.0.0.1:8000/GetArticulosWS*' => Http::response('', 500),
         ]);
 
-        $client = new VerialClient(host: '127.0.0.1', port: 8000, session: 'test', timeout: 5);
+        $client  = new VerialClient(host: '127.0.0.1', port: 8000, session: 'test', timeout: 5);
         $service = new SyncCatalogService($client);
 
         $result = $service->sync();

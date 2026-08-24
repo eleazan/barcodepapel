@@ -33,14 +33,14 @@ class PostController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'excerpt' => ['nullable', 'string', 'max:300'],
-            'body' => ['required', 'string'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'title'        => ['required', 'string', 'max:255'],
+            'excerpt'      => ['nullable', 'string', 'max:300'],
+            'body'         => ['required', 'string'],
+            'image'        => ['nullable', 'image', 'max:2048'],
             'is_published' => ['boolean'],
         ]);
 
-        $data['slug'] = Str::slug($data['title']);
+        $data['slug']    = Str::slug($data['title']);
         $data['user_id'] = auth()->id();
 
         if ($request->hasFile('image')) {
@@ -66,11 +66,11 @@ class PostController extends Controller
     public function update(Request $request, Post $post): RedirectResponse
     {
         $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', Rule::unique('posts')->ignore($post)],
-            'excerpt' => ['nullable', 'string', 'max:300'],
-            'body' => ['required', 'string'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'title'        => ['required', 'string', 'max:255'],
+            'slug'         => ['required', 'string', 'max:255', Rule::unique('posts')->ignore($post)],
+            'excerpt'      => ['nullable', 'string', 'max:300'],
+            'body'         => ['required', 'string'],
+            'image'        => ['nullable', 'image', 'max:2048'],
             'is_published' => ['boolean'],
         ]);
 

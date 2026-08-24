@@ -30,14 +30,14 @@ describe('VerialClient', function () {
         $client = new VerialClient(host: null, port: 8000, session: null, timeout: 30);
 
         expect(fn () => $client->get('GetArticulosWS'))
-            ->toThrow(\RuntimeException::class, 'Verial no configurado');
+            ->toThrow(RuntimeException::class, 'Verial no configurado');
     });
 
     test('post() lanza RuntimeException cuando no está configurado', function () {
         $client = new VerialClient(host: null, port: 8000, session: null, timeout: 30);
 
         expect(fn () => $client->post('NuevoDocClienteWS', []))
-            ->toThrow(\RuntimeException::class, 'Verial no configurado');
+            ->toThrow(RuntimeException::class, 'Verial no configurado');
     });
 
     test('get() realiza petición GET con parámetro de sesión', function () {
@@ -83,7 +83,7 @@ describe('VerialClient', function () {
         $client = new VerialClient(host: '127.0.0.1', port: 8000, session: 'abc', timeout: 30);
 
         expect(fn () => $client->get('GetArticulosWS'))
-            ->toThrow(\RuntimeException::class);
+            ->toThrow(RuntimeException::class);
     });
 
 });

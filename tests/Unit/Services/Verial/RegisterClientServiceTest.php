@@ -5,9 +5,10 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Services\Verial\RegisterClientService;
 use App\Services\Verial\VerialClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function makeRegisterClientService(): RegisterClientService
 {
@@ -23,7 +24,7 @@ function makeRegisterClientService(): RegisterClientService
 describe('RegisterClientService', function () {
 
     test('register() llama a NuevoClienteWS con los datos del usuario', function () {
-        $user = User::factory()->create(['name' => 'Ana López', 'email' => 'ana@example.com']);
+        $user    = User::factory()->create(['name' => 'Ana López', 'email' => 'ana@example.com']);
         $service = makeRegisterClientService();
 
         $service->register($user);
@@ -33,12 +34,12 @@ describe('RegisterClientService', function () {
 
             return str_contains($request->url(), 'NuevoClienteWS')
                 && $body['Nombre'] === $user->name
-                && $body['Email'] === $user->email;
+                && $body['Email']  === $user->email;
         });
     });
 
     test('register() actualiza verial_cliente_id del usuario', function () {
-        $user = User::factory()->create(['verial_cliente_id' => null]);
+        $user    = User::factory()->create(['verial_cliente_id' => null]);
         $service = makeRegisterClientService();
 
         $service->register($user);
@@ -50,7 +51,7 @@ describe('RegisterClientService', function () {
     });
 
     test('register() no hace nada si el usuario ya tiene verial_cliente_id', function () {
-        $user = User::factory()->create(['verial_cliente_id' => 50]);
+        $user    = User::factory()->create(['verial_cliente_id' => 50]);
         $service = makeRegisterClientService();
 
         $service->register($user);

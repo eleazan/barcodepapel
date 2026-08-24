@@ -4,32 +4,35 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliveryZone;
 use App\Models\Product;
 use App\Services\Cart\Cart;
+use App\Services\Delivery\DeliveryCalendar;
 use App\Services\Delivery\DeliveryZoneResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * El carrito se recibe por método, nunca por constructor: Laravel guarda la
+ * instancia del controlador dentro del objeto Route, así que una dependencia
+ * `scoped` inyectada en el constructor sobrevive a la petición que la creó.
+ */
 class CartController extends Controller
 {
-    public function __construct(
-        private readonly Cart $cart,
-    ) {}
-
-    public function index(): View
+    public function index(Cart $cart): View
     {
-        $items = $this->cart->items();
+        $items = $cart->items();
 
         return view('store.cart.index', [
             'items'    => $items,
-            'subtotal' => $this->cart->subtotal(),
-            'avisos'   => array_values(array_unique($this->cart->adjustments())),
+            'subtotal' => $cart->subtotal(),
+            'avisos'   => array_values(array_unique($cart->adjustments())),
         ]);
     }
 
-    public function add(Request $request, Product $product): RedirectResponse|JsonResponse
+    public function add(Request $request, Cart $cart, Product $product): RedirectResponse|JsonResponse
     {
         abort_unless($product->is_active, 404);
 
@@ -43,21 +46,22 @@ class CartController extends Controller
         if (! $product->hasStock()) {
             return $this->respond(
                 $request,
+                $cart,
                 success: false,
                 message: "«{$product->name}» está agotado ahora mismo.",
             );
         }
 
-        $cantidadFinal = $this->cart->add($product, (int) ($validated['quantity'] ?? 1));
+        $cantidadFinal = $cart->add($product, (int) ($validated['quantity'] ?? 1));
 
         $mensaje = $cantidadFinal < (int) ($validated['quantity'] ?? 1)
             ? "Hemos añadido {$cantidadFinal} unidad(es) de «{$product->name}», el máximo disponible."
             : "«{$product->name}» añadido al carrito.";
 
-        return $this->respond($request, success: true, message: $mensaje);
+        return $this->respond($request, $cart, success: true, message: $mensaje);
     }
 
-    public function update(Request $request, Product $product): RedirectResponse|JsonResponse
+    public function update(Request $request, Cart $cart, Product $product): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:0', 'max:'.Cart::MAX_QUANTITY],
@@ -68,10 +72,11 @@ class CartController extends Controller
 
         $quantity = (int) $validated['quantity'];
 
-        $this->cart->update($product, $quantity);
+        $cart->update($product, $quantity);
 
         return $this->respond(
             $request,
+            $cart,
             success: true,
             message: $quantity === 0
                 ? "«{$product->name}» eliminado del carrito."
@@ -79,24 +84,24 @@ class CartController extends Controller
         );
     }
 
-    public function remove(Request $request, Product $product): RedirectResponse|JsonResponse
+    public function remove(Request $request, Cart $cart, Product $product): RedirectResponse|JsonResponse
     {
-        $this->cart->remove($product->id);
+        $cart->remove($product->id);
 
-        return $this->respond($request, success: true, message: "«{$product->name}» eliminado del carrito.");
+        return $this->respond($request, $cart, success: true, message: "«{$product->name}» eliminado del carrito.");
     }
 
-    public function clear(Request $request): RedirectResponse|JsonResponse
+    public function clear(Request $request, Cart $cart): RedirectResponse|JsonResponse
     {
-        $this->cart->clear();
+        $cart->clear();
 
-        return $this->respond($request, success: true, message: 'Carrito vaciado.');
+        return $this->respond($request, $cart, success: true, message: 'Carrito vaciado.');
     }
 
     /**
      * Comprobación de cobertura para el widget de código postal.
      */
-    public function checkPostalCode(Request $request, DeliveryZoneResolver $zones): JsonResponse
+    public function checkPostalCode(Request $request, DeliveryZoneResolver $zones, DeliveryCalendar $calendar): JsonResponse
     {
         $request->validate([
             'codigo_postal' => ['required', 'digits:5'],
@@ -106,23 +111,51 @@ class CartController extends Controller
 
         $zone = $zones->resolve($request->string('codigo_postal')->toString());
 
+        $proxima = $zone?->nextDeliveryDate();
+
         return response()->json([
             'cubierto'                => $zone !== null,
             'zona'                    => $zone?->neighborhood,
             'ciudad'                  => $zone?->city,
             'gastos_envio'            => $zone !== null ? (float) $zone->delivery_fee : null,
             'gastos_envio_formateado' => $zone?->formattedFee(),
+            'dias_reparto'            => $zone?->deliveryDaysLabel(),
+            'reparto_diario'          => $zone?->deliversAnyOpenDay(),
+            'proxima_entrega'         => $proxima?->toDateString(),
+            'proxima_entrega_texto'   => $proxima?->translatedFormat('l, j \d\e F'),
+            'motivo_retraso'          => $zone !== null ? $this->motivoDelRetraso($zone, $calendar) : null,
         ]);
     }
 
-    private function respond(Request $request, bool $success, string $message): RedirectResponse|JsonResponse
+    /**
+     * Explicación de por qué la entrega no cae en el primer día de reparto:
+     * «El jueves 15 de agosto cerramos por Asunción».
+     */
+    private function motivoDelRetraso(DeliveryZone $zone, DeliveryCalendar $calendar): ?string
+    {
+        $saltados = $calendar->closuresDelaying($zone);
+
+        if ($saltados === []) {
+            return null;
+        }
+
+        $primero = $saltados[0];
+
+        return sprintf(
+            'El %s cerramos por %s',
+            $primero['fecha']->translatedFormat('l j \d\e F'),
+            $primero['cierre']->name,
+        );
+    }
+
+    private function respond(Request $request, Cart $cart, bool $success, string $message): RedirectResponse|JsonResponse
     {
         if ($request->expectsJson()) {
             return response()->json([
                 'ok'       => $success,
                 'mensaje'  => $message,
-                'unidades' => $this->cart->count(),
-                'subtotal' => $this->cart->formattedSubtotal(),
+                'unidades' => $cart->count(),
+                'subtotal' => $cart->formattedSubtotal(),
             ], $success ? 200 : 422);
         }
 

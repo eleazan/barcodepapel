@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
+use App\Http\Controllers\Admin\JobController;
+use App\Http\Controllers\Admin\NonWorkingDayController;
 use App\Http\Controllers\Admin\NotificationLogController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
@@ -23,6 +26,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StoreController;
 use Illuminate\Support\Facades\Route;
@@ -110,6 +114,16 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 /*
 |--------------------------------------------------------------------------
+| Páginas legales
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/aviso-legal', [LegalController::class, 'notice'])->name('legal');
+Route::get('/privacidad', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/condiciones-de-venta', [LegalController::class, 'terms'])->name('terms');
+
+/*
+|--------------------------------------------------------------------------
 | Carrito y checkout
 |--------------------------------------------------------------------------
 */
@@ -125,10 +139,16 @@ Route::prefix('carrito')->name('cart.')->group(function () {
 Route::get('/comprobar-codigo-postal', [CartController::class, 'checkPostalCode'])
     ->name('delivery.check');
 
-Route::get('/finalizar-pedido', [CheckoutController::class, 'show'])->name('checkout.show');
-Route::post('/finalizar-pedido', [CheckoutController::class, 'store'])
-    ->middleware('throttle:10,1')
-    ->name('checkout.store');
+// Comprar exige cuenta con el correo verificado: el pedido queda asociado a un
+// cliente y así se puede seguir desde su ficha. El carrito sigue siendo libre.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/finalizar-pedido', [CheckoutController::class, 'show'])->name('checkout.show');
+    Route::post('/finalizar-pedido', [CheckoutController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('checkout.store');
+});
+
+// Los pedidos antiguos de invitados se siguen consultando por sesión.
 Route::get('/pedido/{orderNumber}', [CheckoutController::class, 'confirmation'])
     ->name('checkout.confirmation');
 
@@ -147,6 +167,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
     Route::get('orders/{order}/pdf', [OrderController::class, 'pdf'])->name('orders.pdf');
     Route::resource('delivery-zones', DeliveryZoneController::class)->except('show');
+    Route::resource('non-working-days', NonWorkingDayController::class)->except('show');
+
+    Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::resource('posts', AdminPostController::class)->except('show');
 
     // Notifications
@@ -164,4 +188,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('verial/sync-order-status', [VerialSyncController::class, 'syncOrderStatus'])->name('verial.sync-order-status');
     Route::post('verial/upload-stock', [VerialSyncController::class, 'uploadStockCsv'])->name('verial.upload-stock');
     Route::post('verial/upload-prices', [VerialSyncController::class, 'uploadPricesCsv'])->name('verial.upload-prices');
+
+    // Tareas en segundo plano
+    Route::get('jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::post('jobs/{task}/run', [JobController::class, 'run'])->name('jobs.run');
+    Route::post('jobs/{task}/reset', [JobController::class, 'reset'])->name('jobs.reset');
+    Route::post('jobs/{task}/batches/{batch}/cancel', [JobController::class, 'cancel'])->name('jobs.cancel');
 });

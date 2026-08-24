@@ -28,7 +28,7 @@
         'sku' => 'SKU',
         'category_id' => 'Categoría',
         'sort_order' => 'Orden',
-        'neighborhood' => 'Colonia',
+        'neighborhood' => 'Barrio',
         'city' => 'Ciudad',
         'image' => 'Imagen',
     ];

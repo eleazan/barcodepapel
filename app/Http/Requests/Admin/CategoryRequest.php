@@ -19,11 +19,11 @@ class CategoryRequest extends FormRequest
         $categoryId = $this->route('category')?->id;
 
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories')->ignore($categoryId)],
+            'name'        => ['required', 'string', 'max:255'],
+            'slug'        => ['nullable', 'string', 'max:255', Rule::unique('categories')->ignore($categoryId)],
             'description' => ['nullable', 'string', 'max:1000'],
-            'is_active' => ['boolean'],
-            'sort_order' => ['integer', 'min:0'],
+            'is_active'   => ['boolean'],
+            'sort_order'  => ['integer', 'min:0'],
         ];
     }
 
@@ -31,7 +31,7 @@ class CategoryRequest extends FormRequest
     {
         return [
             'name.required' => 'El nombre de la categoría es obligatorio.',
-            'slug.unique' => 'Ya existe una categoría con este slug.',
+            'slug.unique'   => 'Ya existe una categoría con este slug.',
         ];
     }
 }

@@ -120,7 +120,7 @@ class ProductController extends Controller
 
             foreach ($request->file('images') as $i => $file) {
                 $product->images()->create([
-                    'path' => $file->store('products', 'public'),
+                    'path'       => $file->store('products', 'public'),
                     'sort_order' => $maxOrder + $i + 1,
                 ]);
             }

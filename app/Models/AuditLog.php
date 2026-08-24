@@ -53,7 +53,7 @@ class AuditLog extends Model
             self::EVENT_CREATED => 'Creado',
             self::EVENT_UPDATED => 'Modificado',
             self::EVENT_DELETED => 'Eliminado',
-            default => $this->event,
+            default             => $this->event,
         };
     }
 
@@ -63,7 +63,7 @@ class AuditLog extends Model
             self::EVENT_CREATED => 'green',
             self::EVENT_UPDATED => 'blue',
             self::EVENT_DELETED => 'red',
-            default => 'gray',
+            default             => 'gray',
         };
     }
 
@@ -74,8 +74,8 @@ class AuditLog extends Model
      */
     public function changes(): array
     {
-        $old = $this->old_values ?? [];
-        $new = $this->new_values ?? [];
+        $old     = $this->old_values ?? [];
+        $new     = $this->new_values ?? [];
         $changes = [];
 
         foreach ($new as $key => $value) {

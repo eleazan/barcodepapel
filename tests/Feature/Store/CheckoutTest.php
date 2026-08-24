@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     Mail::fake();
 
+    // Comprar exige cuenta con el correo verificado.
+    $this->cliente = User::factory()->create([
+        'email'             => 'marta@example.com',
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($this->cliente);
+
     $this->zona = DeliveryZone::factory()->create([
         'postal_code'  => '07800',
         'neighborhood' => 'Vara de Rey',
@@ -37,6 +45,19 @@ function datosPedido(array $overrides = []): array
         'notes'              => 'Llamar al llegar',
         'acepta_condiciones' => '1',
     ], $overrides);
+}
+
+/**
+ * Corte entre peticiones.
+ *
+ * El carrito está registrado como `scoped`: en producción cada petición
+ * construye uno nuevo que relee el catálogo. En los tests la aplicación es la
+ * misma entre llamadas HTTP, así que hay que soltar las instancias para que el
+ * carrito no arrastre los precios y las cantidades que ya había leído.
+ */
+function nuevaPeticion(): void
+{
+    app()->forgetScopedInstances();
 }
 
 it('redirige al carrito si está vacío', function () {
@@ -161,14 +182,14 @@ it('valida los datos de contacto y entrega', function () {
     ]);
 });
 
-it('acepta pedidos sin email', function () {
+it('usa el correo de la cuenta si el formulario llega sin email', function () {
     $product = Product::factory()->create(['stock' => 5]);
     $this->post(route('cart.add', $product), ['quantity' => 1]);
 
     $this->post(route('checkout.store'), datosPedido(['customer_email' => null]))
         ->assertSessionHasNoErrors();
 
-    expect(Order::latest('id')->first()->customer_email)->toBeNull();
+    expect(Order::latest('id')->first()->customer_email)->toBe($this->cliente->email);
 });
 
 it('no crea el pedido si el carrito está vacío', function () {
@@ -201,33 +222,76 @@ it('registra el acuse de recibo al cliente', function () {
 
     $this->post(route('checkout.store'), datosPedido());
 
-    $log = NotificationLog::latest('id')->first();
+    // Tras el pedido hay dos envíos: el acuse al cliente y el aviso interno.
+    $log = NotificationLog::where('event', NotificationLog::EVENT_ORDER_CREATED)->first();
 
     expect($log)->not->toBeNull();
-    expect($log->event)->toBe(NotificationLog::EVENT_ORDER_CREATED);
     expect($log->channel)->toBe(NotificationLog::CHANNEL_EMAIL);
     expect($log->recipient)->toBe('marta@example.com');
     expect($log->status)->toBe(NotificationLog::STATUS_SENT);
 });
 
 it('asocia el pedido al usuario autenticado', function () {
-    $user    = User::factory()->create();
     $product = Product::factory()->create(['stock' => 5]);
 
-    $this->actingAs($user);
     $this->post(route('cart.add', $product), ['quantity' => 1]);
     $this->post(route('checkout.store'), datosPedido());
 
-    expect(Order::latest('id')->first()->user_id)->toBe($user->id);
+    expect(Order::latest('id')->first()->user_id)->toBe($this->cliente->id);
 });
 
-it('deja el pedido sin usuario cuando el cliente compra como invitado', function () {
-    $product = Product::factory()->create(['stock' => 5]);
-    $this->post(route('cart.add', $product), ['quantity' => 1]);
+describe('comprar exige cuenta', function () {
+    it('manda a iniciar sesión a quien no la tiene', function () {
+        auth()->logout();
 
-    $this->post(route('checkout.store'), datosPedido());
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
 
-    expect(Order::latest('id')->first()->user_id)->toBeNull();
+        $this->get(route('checkout.show'))->assertRedirect(route('login'));
+
+        $this->post(route('checkout.store'), datosPedido())->assertRedirect(route('login'));
+
+        expect(Order::count())->toBe(0);
+    });
+
+    it('no deja comprar mientras el correo no esté confirmado', function () {
+        $this->actingAs(User::factory()->unverified()->create());
+
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
+
+        $this->get(route('checkout.show'))->assertRedirect(route('verification.notice'));
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertRedirect(route('verification.notice'));
+
+        expect(Order::count())->toBe(0);
+    });
+
+    it('deja llenar el carrito sin haber iniciado sesión', function () {
+        auth()->logout();
+
+        $product = Product::factory()->create(['stock' => 5]);
+
+        $this->post(route('cart.add', $product), ['quantity' => 2])->assertRedirect();
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('Iniciar sesi&oacute;n y finalizar', false);
+    });
+
+    it('conserva el carrito al iniciar sesión', function () {
+        auth()->logout();
+
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 2]);
+
+        $this->post(route('login'), [
+            'email'    => $this->cliente->email,
+            'password' => 'password',
+        ]);
+
+        expect(session('carrito'))->toBe([$product->id => 2]);
+    });
 });
 
 describe('confirmación del pedido', function () {
@@ -272,6 +336,155 @@ describe('confirmación del pedido', function () {
     it('devuelve 404 si el número de pedido no existe', function () {
         $this->get(route('checkout.confirmation', 'BP-00000000-XXXXX'))
             ->assertNotFound();
+    });
+});
+
+describe('avisos al entrar en el checkout', function () {
+    it('avisa de las cantidades recortadas por falta de stock', function () {
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 3]);
+
+        // Otro cliente se lleva unidades mientras este rellena el pedido.
+        $product->update(['stock' => 1]);
+        nuevaPeticion();
+
+        $this->get(route('checkout.show'))
+            ->assertOk()
+            ->assertSee('Hemos ajustado', false)
+            ->assertSee($product->name);
+    });
+
+    it('avisa de los productos retirados del catálogo', function () {
+        $disponible = Product::factory()->create(['stock' => 5]);
+        $retirado   = Product::factory()->create(['stock' => 5]);
+
+        $this->post(route('cart.add', $disponible), ['quantity' => 1]);
+        $this->post(route('cart.add', $retirado), ['quantity' => 1]);
+
+        $retirado->update(['is_active' => false]);
+        nuevaPeticion();
+
+        $this->get(route('checkout.show'))
+            ->assertOk()
+            ->assertSee('ya no está disponible', false);
+    });
+
+    it('explica por qué el carrito se ha quedado vacío', function () {
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
+
+        $product->update(['stock' => 0]);
+        nuevaPeticion();
+
+        $this->get(route('checkout.show'))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error', fn (string $error) => str_contains($error, 'se ha agotado'));
+    });
+});
+
+describe('el pedido no cambia entre el resumen y la confirmación', function () {
+    it('confirma el pedido cuando nada ha cambiado', function () {
+        $product = Product::factory()->create(['stock' => 5, 'price' => 10.00]);
+        $this->post(route('cart.add', $product), ['quantity' => 2]);
+        $this->get(route('checkout.show'))->assertOk();
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertSessionMissing('cart_changes');
+
+        expect(Order::count())->toBe(1);
+    });
+
+    it('no crea el pedido si el precio ha subido desde que el cliente lo vio', function () {
+        $product = Product::factory()->create(['stock' => 5, 'price' => 10.00]);
+        $this->post(route('cart.add', $product), ['quantity' => 2]);
+        $this->get(route('checkout.show'))->assertOk();
+
+        $product->update(['price' => 12.50]);
+        nuevaPeticion();
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertRedirect(route('checkout.show'))
+            ->assertSessionHas('cart_changes', fn (array $cambios) => count($cambios) === 1
+                && str_contains($cambios[0], '10,00 €')
+                && str_contains($cambios[0], '12,50 €'));
+
+        expect(Order::count())->toBe(0);
+        expect($product->fresh()->stock)->toBe(5);
+    });
+
+    it('no crea el pedido si el stock ya no da para las unidades pedidas', function () {
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 4]);
+        $this->get(route('checkout.show'))->assertOk();
+
+        $product->update(['stock' => 2]);
+        nuevaPeticion();
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertSessionHas('cart_changes', fn (array $cambios) => str_contains($cambios[0], 'de 4 a 2 unidad(es)'));
+
+        expect(Order::count())->toBe(0);
+    });
+
+    it('no crea el pedido si un producto ha dejado de estar disponible', function () {
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
+        $this->get(route('checkout.show'))->assertOk();
+
+        $product->update(['is_active' => false]);
+        nuevaPeticion();
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertSessionHas('cart_changes', fn (array $cambios) => str_contains($cambios[0], 'se ha retirado del pedido'));
+
+        expect(Order::count())->toBe(0);
+    });
+
+    it('conserva los datos del formulario al avisar del cambio', function () {
+        $product = Product::factory()->create(['stock' => 5, 'price' => 10.00]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
+        $this->get(route('checkout.show'))->assertOk();
+
+        $product->update(['price' => 11.00]);
+        nuevaPeticion();
+
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertSessionHasInput('customer_name', 'Marta Serra')
+            ->assertSessionHasInput('delivery_address', 'Carrer de la Mar 12, 3r B');
+    });
+
+    it('acepta el pedido al reconfirmarlo con el precio nuevo', function () {
+        $product = Product::factory()->create(['stock' => 5, 'price' => 10.00]);
+        $this->post(route('cart.add', $product), ['quantity' => 2]);
+        $this->get(route('checkout.show'))->assertOk();
+
+        $product->update(['price' => 12.50]);
+        nuevaPeticion();
+
+        // Primer intento: solo avisa.
+        $this->post(route('checkout.store'), datosPedido());
+        expect(Order::count())->toBe(0);
+
+        // El cliente vuelve al formulario, ve el precio nuevo y reconfirma.
+        $this->get(route('checkout.show'))->assertOk();
+        $this->post(route('checkout.store'), datosPedido());
+
+        $order = Order::latest('id')->first();
+
+        expect($order)->not->toBeNull();
+        expect((float) $order->subtotal)->toBe(25.00);
+        expect((float) $order->total)->toBe(28.00);
+    });
+
+    it('crea el pedido sin resumen previo en sesión', function () {
+        $product = Product::factory()->create(['stock' => 5]);
+        $this->post(route('cart.add', $product), ['quantity' => 1]);
+
+        // POST directo, sin pasar por el formulario: no hay nada que contrastar.
+        $this->post(route('checkout.store'), datosPedido())
+            ->assertSessionMissing('cart_changes');
+
+        expect(Order::count())->toBe(1);
     });
 });
 

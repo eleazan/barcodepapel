@@ -17,10 +17,10 @@ class SyncFamiliesService
 
     public function sync(): SyncResult
     {
-        $processed = 0;
-        $created = 0;
-        $updated = 0;
-        $errors = 0;
+        $processed     = 0;
+        $created       = 0;
+        $updated       = 0;
+        $errors        = 0;
         $errorMessages = [];
 
         try {
@@ -36,7 +36,7 @@ class SyncFamiliesService
 
                 try {
                     $verialFamiliaId = (int) ($item['CodigoFamilia'] ?? $item['Codigo'] ?? 0);
-                    $nombre = (string) ($item['Nombre'] ?? $item['nombre'] ?? '');
+                    $nombre          = (string) ($item['Nombre'] ?? $item['nombre'] ?? '');
 
                     if ($verialFamiliaId === 0 || $nombre === '') {
                         continue;

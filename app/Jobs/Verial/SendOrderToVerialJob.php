@@ -33,9 +33,9 @@ class SendOrderToVerialJob implements ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Log::error('SendOrderToVerialJob falló definitivamente', [
-            'order_id'    => $this->order->id,
+            'order_id'     => $this->order->id,
             'order_number' => $this->order->order_number,
-            'error'       => $exception->getMessage(),
+            'error'        => $exception->getMessage(),
         ]);
     }
 }

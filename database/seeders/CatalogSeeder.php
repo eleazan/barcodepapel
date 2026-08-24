@@ -7,7 +7,6 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\DeliveryZone;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\User;
@@ -86,7 +85,7 @@ class CatalogSeeder extends Seeder
             unset($p['category']);
             $createdProducts->push(Product::create($p + [
                 'category_id' => $cat->id,
-                'is_active' => true,
+                'is_active'   => true,
             ]));
         }
 
@@ -116,44 +115,44 @@ class CatalogSeeder extends Seeder
         // ----- Pedidos de ejemplo -----
         $sampleOrders = [
             [
-                'customer_name' => 'Maria Tur Marí',
-                'customer_email' => 'maria.tur@email.com',
-                'customer_phone' => '671234567',
+                'customer_name'    => 'Maria Tur Marí',
+                'customer_email'   => 'maria.tur@email.com',
+                'customer_phone'   => '671234567',
                 'delivery_address' => 'Carrer de la Virgen 18, 2ºA',
-                'postal_code' => '07800',
-                'status' => Order::STATUS_ENTREGADO,
-                'delivery_fee' => 0,
-                'notes' => null,
-                'items' => [
+                'postal_code'      => '07800',
+                'status'           => Order::STATUS_ENTREGADO,
+                'delivery_fee'     => 0,
+                'notes'            => null,
+                'items'            => [
                     ['sku' => 'LIB-001', 'qty' => 1],
                     ['sku' => 'CUA-001', 'qty' => 3],
                     ['sku' => 'ESC-002', 'qty' => 2],
                 ],
             ],
             [
-                'customer_name' => 'Toni Ribas Costa',
-                'customer_email' => null,
-                'customer_phone' => '698765432',
+                'customer_name'    => 'Toni Ribas Costa',
+                'customer_email'   => null,
+                'customer_phone'   => '698765432',
                 'delivery_address' => 'Avinguda d\'Espanya 42',
-                'postal_code' => '07820',
-                'status' => Order::STATUS_EN_REPARTO,
-                'delivery_fee' => 5,
-                'notes' => 'Tocar timbre del bajo',
-                'items' => [
+                'postal_code'      => '07820',
+                'status'           => Order::STATUS_EN_REPARTO,
+                'delivery_fee'     => 5,
+                'notes'            => 'Tocar timbre del bajo',
+                'items'            => [
                     ['sku' => 'LIB-003', 'qty' => 1],
                     ['sku' => 'LIB-005', 'qty' => 1],
                 ],
             ],
             [
-                'customer_name' => 'Catalina Ferrer Planells',
-                'customer_email' => 'cati.ferrer@email.com',
-                'customer_phone' => '611223344',
+                'customer_name'    => 'Catalina Ferrer Planells',
+                'customer_email'   => 'cati.ferrer@email.com',
+                'customer_phone'   => '611223344',
                 'delivery_address' => 'Carrer Sant Jaume 7',
-                'postal_code' => '07840',
-                'status' => Order::STATUS_PREPARADO,
-                'delivery_fee' => 5,
-                'notes' => null,
-                'items' => [
+                'postal_code'      => '07840',
+                'status'           => Order::STATUS_PREPARADO,
+                'delivery_fee'     => 5,
+                'notes'            => null,
+                'items'            => [
                     ['sku' => 'ESC-008', 'qty' => 2],
                     ['sku' => 'CUA-005', 'qty' => 1],
                     ['sku' => 'ART-001', 'qty' => 1],
@@ -161,15 +160,15 @@ class CatalogSeeder extends Seeder
                 ],
             ],
             [
-                'customer_name' => 'Joan Serra Torres',
-                'customer_email' => 'joan.serra@empresa.es',
-                'customer_phone' => '644556677',
+                'customer_name'    => 'Joan Serra Torres',
+                'customer_email'   => 'joan.serra@empresa.es',
+                'customer_phone'   => '644556677',
                 'delivery_address' => 'Carrer Pere Francesc 15, 1er piso',
-                'postal_code' => '07801',
-                'status' => Order::STATUS_PENDIENTE,
-                'delivery_fee' => 0,
-                'notes' => 'Factura a nombre de Serra & Associats S.L.',
-                'items' => [
+                'postal_code'      => '07801',
+                'status'           => Order::STATUS_PENDIENTE,
+                'delivery_fee'     => 0,
+                'notes'            => 'Factura a nombre de Serra & Associats S.L.',
+                'items'            => [
                     ['sku' => 'OFI-001', 'qty' => 5],
                     ['sku' => 'OFI-002', 'qty' => 10],
                     ['sku' => 'OFI-004', 'qty' => 3],
@@ -177,15 +176,15 @@ class CatalogSeeder extends Seeder
                 ],
             ],
             [
-                'customer_name' => 'Neus Cardona Roig',
-                'customer_email' => 'neus.cardona@email.com',
-                'customer_phone' => '677889900',
+                'customer_name'    => 'Neus Cardona Roig',
+                'customer_email'   => 'neus.cardona@email.com',
+                'customer_phone'   => '677889900',
                 'delivery_address' => 'Carrer de sa Creu 22',
-                'postal_code' => '07810',
-                'status' => Order::STATUS_PENDIENTE,
-                'delivery_fee' => 3,
-                'notes' => null,
-                'items' => [
+                'postal_code'      => '07810',
+                'status'           => Order::STATUS_PENDIENTE,
+                'delivery_fee'     => 3,
+                'notes'            => null,
+                'items'            => [
                     ['sku' => 'MOC-001', 'qty' => 1],
                     ['sku' => 'MOC-003', 'qty' => 1],
                     ['sku' => 'ESC-001', 'qty' => 2],
@@ -194,29 +193,29 @@ class CatalogSeeder extends Seeder
                 ],
             ],
             [
-                'customer_name' => 'Vicent Escandell Noguera',
-                'customer_email' => null,
-                'customer_phone' => '633221100',
+                'customer_name'    => 'Vicent Escandell Noguera',
+                'customer_email'   => null,
+                'customer_phone'   => '633221100',
                 'delivery_address' => 'Passeig de Vara de Rey 9',
-                'postal_code' => '07800',
-                'status' => Order::STATUS_ENTREGADO,
-                'delivery_fee' => 0,
-                'notes' => null,
-                'items' => [
+                'postal_code'      => '07800',
+                'status'           => Order::STATUS_ENTREGADO,
+                'delivery_fee'     => 0,
+                'notes'            => null,
+                'items'            => [
                     ['sku' => 'LIB-002', 'qty' => 1],
                     ['sku' => 'LIB-007', 'qty' => 1],
                 ],
             ],
             [
-                'customer_name' => 'CEIP Sa Bodega',
-                'customer_email' => 'secretaria@ceipsabodega.es',
-                'customer_phone' => '971301234',
+                'customer_name'    => 'CEIP Sa Bodega',
+                'customer_email'   => 'secretaria@ceipsabodega.es',
+                'customer_phone'   => '971301234',
                 'delivery_address' => 'Carrer de Cas Serres 30',
-                'postal_code' => '07802',
-                'status' => Order::STATUS_PENDIENTE,
-                'delivery_fee' => 0,
-                'notes' => 'Pedido institucional — entregar en secretaría. Horario: 9h-14h.',
-                'items' => [
+                'postal_code'      => '07802',
+                'status'           => Order::STATUS_PENDIENTE,
+                'delivery_fee'     => 0,
+                'notes'            => 'Pedido institucional — entregar en secretaría. Horario: 9h-14h.',
+                'items'            => [
                     ['sku' => 'CUA-001', 'qty' => 30],
                     ['sku' => 'ESC-001', 'qty' => 30],
                     ['sku' => 'ESC-003', 'qty' => 30],
@@ -224,15 +223,15 @@ class CatalogSeeder extends Seeder
                 ],
             ],
             [
-                'customer_name' => 'Margalida Costa Juan',
-                'customer_email' => 'marga.art@email.com',
-                'customer_phone' => '699001122',
+                'customer_name'    => 'Margalida Costa Juan',
+                'customer_email'   => 'marga.art@email.com',
+                'customer_phone'   => '699001122',
                 'delivery_address' => 'Carrer Major 5, Sant Carles',
-                'postal_code' => '07815',
-                'status' => Order::STATUS_EN_REPARTO,
-                'delivery_fee' => 7,
-                'notes' => null,
-                'items' => [
+                'postal_code'      => '07815',
+                'status'           => Order::STATUS_EN_REPARTO,
+                'delivery_fee'     => 7,
+                'notes'            => null,
+                'items'            => [
                     ['sku' => 'ART-005', 'qty' => 3],
                     ['sku' => 'ART-002', 'qty' => 2],
                     ['sku' => 'CUA-005', 'qty' => 2],
@@ -247,24 +246,24 @@ class CatalogSeeder extends Seeder
             $itemsData = $orderData['items'];
             unset($orderData['items']);
 
-            $subtotal = 0;
+            $subtotal   = 0;
             $orderItems = [];
 
             foreach ($itemsData as $item) {
-                $product = $productsBySku[$item['sku']];
+                $product   = $productsBySku[$item['sku']];
                 $itemTotal = (float) $product->price * $item['qty'];
                 $subtotal += $itemTotal;
 
                 $orderItems[] = [
                     'product_id' => $product->id,
-                    'quantity' => $item['qty'],
+                    'quantity'   => $item['qty'],
                     'unit_price' => $product->price,
-                    'total' => $itemTotal,
+                    'total'      => $itemTotal,
                 ];
             }
 
-            $orderData['subtotal'] = $subtotal;
-            $orderData['total'] = $subtotal + $orderData['delivery_fee'];
+            $orderData['subtotal']   = $subtotal;
+            $orderData['total']      = $subtotal + $orderData['delivery_fee'];
             $orderData['created_at'] = now()->subDays(count($sampleOrders) - $i)->subHours(rand(0, 12));
 
             $order = Order::create($orderData);
@@ -276,30 +275,30 @@ class CatalogSeeder extends Seeder
 
         $posts = [
             [
-                'title' => 'Novedades de primavera: libros que no te puedes perder',
-                'excerpt' => 'Descubre las novedades literarias que han llegado a nuestra librería este mes. Desde narrativa contemporánea hasta los mejores álbumes ilustrados para los más pequeños.',
-                'body' => '<p>La primavera ha llegado a Ibiza y con ella una selección increíble de nuevos títulos que ya están disponibles en nuestra librería.</p><h2>Narrativa</h2><p>Este mes destacamos la nueva novela de Irene Solà, que nos transporta a un mundo de realismo mágico mediterráneo. También ha llegado la esperadísima traducción de la última obra de Ocean Vuong, una prosa poética que no deja indiferente.</p><h2>Infantil y juvenil</h2><p>Para los más pequeños, tenemos los nuevos álbumes de la colección Andana, con ilustraciones preciosas que harán volar la imaginación. Y para los adolescentes, la nueva trilogía de fantasía que está arrasando en las listas de ventas.</p><h2>Material escolar</h2><p>Además, hemos renovado nuestra sección de material escolar con las últimas novedades de Faber-Castell y Staedtler. Colores vibrantes y herramientas de calidad para artistas de todas las edades.</p><p>¡Ven a descubrirlos o haz tu pedido con reparto a domicilio!</p>',
+                'title'        => 'Novedades de primavera: libros que no te puedes perder',
+                'excerpt'      => 'Descubre las novedades literarias que han llegado a nuestra librería este mes. Desde narrativa contemporánea hasta los mejores álbumes ilustrados para los más pequeños.',
+                'body'         => '<p>La primavera ha llegado a Ibiza y con ella una selección increíble de nuevos títulos que ya están disponibles en nuestra librería.</p><h2>Narrativa</h2><p>Este mes destacamos la nueva novela de Irene Solà, que nos transporta a un mundo de realismo mágico mediterráneo. También ha llegado la esperadísima traducción de la última obra de Ocean Vuong, una prosa poética que no deja indiferente.</p><h2>Infantil y juvenil</h2><p>Para los más pequeños, tenemos los nuevos álbumes de la colección Andana, con ilustraciones preciosas que harán volar la imaginación. Y para los adolescentes, la nueva trilogía de fantasía que está arrasando en las listas de ventas.</p><h2>Material escolar</h2><p>Además, hemos renovado nuestra sección de material escolar con las últimas novedades de Faber-Castell y Staedtler. Colores vibrantes y herramientas de calidad para artistas de todas las edades.</p><p>¡Ven a descubrirlos o haz tu pedido con reparto a domicilio!</p>',
                 'is_published' => true,
                 'published_at' => now()->subDays(3),
             ],
             [
-                'title' => 'Vuelta al cole 2026: guía completa de material escolar',
-                'excerpt' => 'Todo lo que necesitas para la vuelta al cole en Ibiza. Cuadernos, mochilas, estuches y mucho más. Te lo llevamos a casa.',
-                'body' => '<p>Septiembre está a la vuelta de la esquina y en Barco de Papel ya tenemos preparado todo el material escolar que tus hijos van a necesitar.</p><h2>Listas de material</h2><p>Si tu cole ya ha publicado la lista de material, tráenosla y te lo preparamos todo. También puedes enviárnosla por email o WhatsApp y te lo llevamos a casa.</p><h2>Lo más vendido</h2><ul><li>Mochilas Totto y Eastpak</li><li>Cuadernos Oxford y Lamela</li><li>Estuches Enso y Roll Road</li><li>Lápices de colores Faber-Castell</li><li>Rotuladores Carioca y Giotto</li></ul><h2>Reparto a domicilio</h2><p>Recuerda que hacemos reparto a domicilio en toda la isla de Ibiza. Haz tu pedido y te lo llevamos en 24-48 horas.</p>',
+                'title'        => 'Vuelta al cole 2026: guía completa de material escolar',
+                'excerpt'      => 'Todo lo que necesitas para la vuelta al cole en Ibiza. Cuadernos, mochilas, estuches y mucho más. Te lo llevamos a casa.',
+                'body'         => '<p>Septiembre está a la vuelta de la esquina y en Barco de Papel ya tenemos preparado todo el material escolar que tus hijos van a necesitar.</p><h2>Listas de material</h2><p>Si tu cole ya ha publicado la lista de material, tráenosla y te lo preparamos todo. También puedes enviárnosla por email o WhatsApp y te lo llevamos a casa.</p><h2>Lo más vendido</h2><ul><li>Mochilas Totto y Eastpak</li><li>Cuadernos Oxford y Lamela</li><li>Estuches Enso y Roll Road</li><li>Lápices de colores Faber-Castell</li><li>Rotuladores Carioca y Giotto</li></ul><h2>Reparto a domicilio</h2><p>Recuerda que hacemos reparto a domicilio en toda la isla de Ibiza. Haz tu pedido y te lo llevamos en 24-48 horas.</p>',
                 'is_published' => true,
                 'published_at' => now()->subDays(10),
             ],
             [
-                'title' => 'Club de lectura: empezamos en octubre',
-                'excerpt' => 'Lanzamos nuestro primer club de lectura. Cada mes elegiremos un libro y nos reuniremos para comentarlo. ¡Apúntate!',
-                'body' => '<p>Estamos muy contentos de anunciar que en octubre arranca el <strong>Club de Lectura de Barco de Papel</strong>.</p><h2>¿Cómo funciona?</h2><p>Cada mes seleccionaremos un libro. Los participantes tendrán un 10% de descuento en el título elegido. Nos reuniremos el último viernes de cada mes en un lugar especial de Ibiza para compartir impresiones y debatir sobre la lectura.</p><h2>Primer libro</h2><p>El primer libro del club será anunciado en nuestras redes sociales y en esta misma web la primera semana de octubre. ¡Estate atento!</p><h2>Inscripción</h2><p>Para apuntarte, pásate por la librería o envíanos un email a info@barcodepapel.es. Es gratuito y abierto a todos los amantes de la lectura en Ibiza.</p>',
+                'title'        => 'Club de lectura: empezamos en octubre',
+                'excerpt'      => 'Lanzamos nuestro primer club de lectura. Cada mes elegiremos un libro y nos reuniremos para comentarlo. ¡Apúntate!',
+                'body'         => '<p>Estamos muy contentos de anunciar que en octubre arranca el <strong>Club de Lectura de Barco de Papel</strong>.</p><h2>¿Cómo funciona?</h2><p>Cada mes seleccionaremos un libro. Los participantes tendrán un 10% de descuento en el título elegido. Nos reuniremos el último viernes de cada mes en un lugar especial de Ibiza para compartir impresiones y debatir sobre la lectura.</p><h2>Primer libro</h2><p>El primer libro del club será anunciado en nuestras redes sociales y en esta misma web la primera semana de octubre. ¡Estate atento!</p><h2>Inscripción</h2><p>Para apuntarte, pásate por la librería o envíanos un email a info@barcodepapel.es. Es gratuito y abierto a todos los amantes de la lectura en Ibiza.</p>',
                 'is_published' => true,
                 'published_at' => now()->subDays(17),
             ],
             [
-                'title' => 'Los 5 mejores libros para regalar esta Navidad',
-                'excerpt' => 'Ideas de regalo para todos los gustos. Desde bestsellers hasta joyas escondidas que sorprenderán a cualquier lector.',
-                'body' => '<p>La Navidad se acerca y un buen libro siempre es un regalo perfecto. Aquí van nuestras recomendaciones:</p><h2>1. Para el lector voraz</h2><p>"Intermezzo" de Sally Rooney — La autora irlandesa vuelve con una historia sobre dos hermanos que navegan el duelo y el amor de maneras completamente distintas.</p><h2>2. Para los peques</h2><p>"El monstruo de colores va al cole" — Un clásico moderno que ayuda a los niños a gestionar sus emociones ante los cambios.</p><h2>3. Para amantes de Ibiza</h2><p>"Eivissa: una historia" — Un recorrido ilustrado por la historia de nuestra isla, desde los fenicios hasta hoy.</p><h2>4. Para quien quiere aprender</h2><p>"Pensar rápido, pensar despacio" de Daniel Kahneman — Un libro que cambiará cómo entiendes tus propias decisiones.</p><h2>5. Para artistas</h2><p>Set de acuarelas Winsor & Newton con cuaderno de papel algodón — Perfecto para iniciarse en la acuarela o mejorar la técnica.</p>',
+                'title'        => 'Los 5 mejores libros para regalar esta Navidad',
+                'excerpt'      => 'Ideas de regalo para todos los gustos. Desde bestsellers hasta joyas escondidas que sorprenderán a cualquier lector.',
+                'body'         => '<p>La Navidad se acerca y un buen libro siempre es un regalo perfecto. Aquí van nuestras recomendaciones:</p><h2>1. Para el lector voraz</h2><p>"Intermezzo" de Sally Rooney — La autora irlandesa vuelve con una historia sobre dos hermanos que navegan el duelo y el amor de maneras completamente distintas.</p><h2>2. Para los peques</h2><p>"El monstruo de colores va al cole" — Un clásico moderno que ayuda a los niños a gestionar sus emociones ante los cambios.</p><h2>3. Para amantes de Ibiza</h2><p>"Eivissa: una historia" — Un recorrido ilustrado por la historia de nuestra isla, desde los fenicios hasta hoy.</p><h2>4. Para quien quiere aprender</h2><p>"Pensar rápido, pensar despacio" de Daniel Kahneman — Un libro que cambiará cómo entiendes tus propias decisiones.</p><h2>5. Para artistas</h2><p>Set de acuarelas Winsor & Newton con cuaderno de papel algodón — Perfecto para iniciarse en la acuarela o mejorar la técnica.</p>',
                 'is_published' => true,
                 'published_at' => now()->subDays(25),
             ],

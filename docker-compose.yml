@@ -5,46 +5,88 @@ name: barcodepapel
 # Production uses Dockerfile directly via Coolify (target: production)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ─── Bloques comunes ─────────────────────────────────────────────────────────
+# En producción el worker y el planificador viven dentro del contenedor de la
+# aplicación como servicios de s6 (ver docker/s6/). En desarrollo van en
+# contenedores aparte para poder reiniciarlos sueltos: el código está montado
+# por volumen y un worker en marcha no recoge los cambios hasta que se reinicia.
+x-app-environment: &app-environment
+  APP_NAME: "BarcodePapel"
+  APP_ENV: local
+  APP_DEBUG: "true"
+  APP_KEY: ${APP_KEY}
+  APP_URL: http://192.168.1.119:8080
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: barcodepapel
+  DB_USERNAME: barcodepapel
+  DB_PASSWORD: secret
+  CACHE_STORE: database
+  SESSION_DRIVER: database
+  QUEUE_CONNECTION: database
+  MAIL_MAILER: smtp
+  MAIL_HOST: mailpit
+  MAIL_PORT: 1025
+  MAIL_FROM_ADDRESS: "noreply@barcodepapel.test"
+  VITE_APP_URL: http://192.168.1.119:8080
+
+x-app-volumes: &app-volumes
+  # Mount source code for live changes (PHP files reflect instantly)
+  - .:/var/www/html
+  # Persist storage folder (uploads, logs, etc.)
+  - app_storage:/var/www/html/storage/app/public
+  # Exclude vendor and node_modules from host mount
+  - vendor:/var/www/html/vendor
+  - node_modules:/var/www/html/node_modules
+
+x-app-build: &app-build
+  context: .
+  dockerfile: Dockerfile
+  target: development
+
 services:
 
   # ─── Application (PHP + Nginx) ───────────────────────────────────────────────
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
+    build: *app-build
     container_name: barcodepapel_app
     restart: unless-stopped
     ports:
       - "8080:8080"
-    environment:
-      APP_NAME: "BarcodePapel"
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_KEY: ${APP_KEY}
-      APP_URL: http://192.168.1.119:8080
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: barcodepapel
-      DB_USERNAME: barcodepapel
-      DB_PASSWORD: secret
-      CACHE_STORE: database
-      SESSION_DRIVER: database
-      QUEUE_CONNECTION: database
-      MAIL_MAILER: smtp
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_FROM_ADDRESS: "noreply@barcodepapel.test"
-      VITE_APP_URL: http://192.168.1.119:8080
-    volumes:
-      # Mount source code for live changes (PHP files reflect instantly)
-      - .:/var/www/html
-      # Persist storage folder (uploads, logs, etc.)
-      - app_storage:/var/www/html/storage/app/public
-      # Exclude vendor and node_modules from host mount
-      - vendor:/var/www/html/vendor
-      - node_modules:/var/www/html/node_modules
+    environment: *app-environment
+    volumes: *app-volumes
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - barcodepapel
+
+  # ─── Queue worker ────────────────────────────────────────────────────────────
+  # Sin esto no avanza ningún job: ni los lotes de /admin/jobs, ni las cargas de
+  # CSV, ni el envío de pedidos a Verial. Tras tocar un Job: restart worker.
+  worker:
+    build: *app-build
+    container_name: barcodepapel_worker
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3 --sleep=3 --timeout=120
+    environment: *app-environment
+    volumes: *app-volumes
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - barcodepapel
+
+  # ─── Scheduler ───────────────────────────────────────────────────────────────
+  # Las tareas de routes/console.php (sincronizaciones con Verial, limpiezas).
+  scheduler:
+    build: *app-build
+    container_name: barcodepapel_scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    environment: *app-environment
+    volumes: *app-volumes
     depends_on:
       mysql:
         condition: service_healthy

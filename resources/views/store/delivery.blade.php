@@ -37,6 +37,14 @@
             },
             {
                 "@type": "Question",
+                "name": "¿Qué día me llega el pedido?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Cada zona tiene sus días de reparto: en unas repartimos cualquier día y en otras un día fijo de la semana. Consulta la columna «Días de reparto» de la tabla de zonas; al finalizar el pedido te indicamos la fecha concreta de entrega según tu código postal."
+                }
+            },
+            {
+                "@type": "Question",
                 "name": "¿Cuánto cuesta el envío a domicilio?",
                 "acceptedAnswer": {
                     "@type": "Answer",
@@ -68,28 +76,7 @@
 
             {{-- Postal code checker --}}
             <div class="bg-white rounded-2xl border border-gray-100 p-6 lg:p-8 mb-12 max-w-xl"
-                 x-data="{
-                    cp: '',
-                    result: null,
-                    zone: null,
-                    checking: false,
-                    check() {
-                        this.checking = true;
-                        this.result = null;
-                        this.zone = null;
-                        setTimeout(() => {
-                            const num = parseInt(this.cp);
-                            if (num >= 7800 && num <= 7849) {
-                                this.result = 'yes';
-                            } else if (this.cp.length === 5) {
-                                this.result = 'no';
-                            } else {
-                                this.result = 'invalid';
-                            }
-                            this.checking = false;
-                        }, 400);
-                    }
-                 }">
+                 x-data="postalChecker('{{ route('delivery.check') }}')">
                 <h2 class="font-display text-xl text-gray-900 mb-2">&iquest;Llegamos a tu zona?</h2>
                 <p class="text-sm text-gray-500 mb-4">Introduce tu c&oacute;digo postal para comprobarlo.</p>
                 <div class="flex gap-3">
@@ -99,7 +86,7 @@
                             id="cp-delivery"
                             type="text"
                             x-model="cp"
-                            @keydown.enter="check()"
+                            @keydown.enter="comprobar()"
                             maxlength="5"
                             inputmode="numeric"
                             placeholder="Ej: 07800"
@@ -107,25 +94,34 @@
                         >
                     </div>
                     <button
-                        @click="check()"
-                        :disabled="cp.length < 5 || checking"
+                        @click="comprobar()"
+                        :disabled="cp.length < 5 || cargando"
                         class="px-6 py-3 bg-brand-600 text-white font-medium rounded-xl hover:bg-brand-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                        <span x-show="!checking">Comprobar</span>
-                        <span x-show="checking" x-cloak>...</span>
+                        <span x-show="! cargando">Comprobar</span>
+                        <span x-show="cargando" x-cloak>&hellip;</span>
                     </button>
                 </div>
                 <div class="mt-4 min-h-[48px]">
-                    <div x-show="result === 'yes'" x-cloak x-transition class="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
-                        <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <span><strong>&iexcl;S&iacute;!</strong> Hacemos reparto en tu zona. Consulta la tarifa en la tabla.</span>
+                    <div x-show="estado === 'ok'" x-cloak x-transition class="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800">
+                        <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        <span>
+                            <strong>&iexcl;S&iacute;!</strong> Hacemos reparto en tu zona<span x-show="zona" x-cloak> (<span x-text="zona"></span>)</span>
+                            por <span x-text="gastos"></span>.
+                            <span x-show="diasReparto" x-cloak class="block mt-1">Repartimos <strong x-text="diasReparto"></strong>.</span>
+                            <span x-show="proximaEntrega" x-cloak class="block mt-1">Si pides hoy, te llega el <strong x-text="proximaEntrega"></strong>.</span>
+                            <span x-show="motivoRetraso" x-cloak class="block mt-1 text-emerald-700"><span x-text="motivoRetraso"></span>, as&iacute; que pasa al siguiente d&iacute;a de reparto.</span>
+                        </span>
                     </div>
-                    <div x-show="result === 'no'" x-cloak x-transition class="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                    <div x-show="estado === 'fuera'" x-cloak x-transition class="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
                         <svg class="w-5 h-5 text-amber-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
                         <span>Lo sentimos, no cubrimos ese c&oacute;digo postal. Solo repartimos en Ibiza (07800–07849).</span>
                     </div>
-                    <div x-show="result === 'invalid'" x-cloak x-transition class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+                    <div x-show="estado === 'invalido'" x-cloak x-transition class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
                         Introduce un c&oacute;digo postal v&aacute;lido de 5 d&iacute;gitos.
+                    </div>
+                    <div x-show="estado === 'error'" x-cloak x-transition class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+                        No hemos podido comprobarlo ahora mismo. Int&eacute;ntalo de nuevo.
                     </div>
                 </div>
             </div>
@@ -145,6 +141,7 @@
                                     <tr class="border-b border-gray-100">
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">C&oacute;digo postal</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Zona / Barrio</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">D&iacute;as de reparto</th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Tarifa de env&iacute;o</th>
                                     </tr>
                                 </thead>
@@ -153,6 +150,12 @@
                                         <tr class="hover:bg-brand-50/30 transition-colors">
                                             <td class="px-6 py-3 text-sm font-mono text-gray-900">{{ $zone->postal_code }}</td>
                                             <td class="px-6 py-3 text-sm text-gray-600">{{ $zone->neighborhood }}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">
+                                                <span class="inline-flex items-center gap-1.5">
+                                                    <svg class="w-3.5 h-3.5 text-brand-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                    <span class="first-letter:uppercase">{{ $zone->deliveryDaysLabel() }}</span>
+                                                </span>
+                                            </td>
                                             <td class="px-6 py-3 text-sm text-right font-medium text-gray-900">{{ $zone->formattedFee() }}</td>
                                         </tr>
                                     @endforeach
@@ -162,6 +165,27 @@
                     </div>
                 @endforeach
             </div>
+
+            {{-- Días sin reparto --}}
+            @if ($cierres->isNotEmpty())
+                <div class="mt-12 max-w-3xl">
+                    <h2 class="font-display text-2xl text-gray-900 mb-2 flex items-center gap-3">
+                        <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        D&iacute;as sin reparto
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-4">
+                        Estos d&iacute;as no salimos a repartir. Si tu entrega cae en uno de ellos, pasa autom&aacute;ticamente al siguiente d&iacute;a de reparto de tu zona.
+                    </p>
+                    <ul class="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
+                        @foreach ($cierres as $item)
+                            <li class="flex items-center justify-between gap-4 px-6 py-3">
+                                <span class="text-sm text-gray-700">{{ $item['cierre']->name }}</span>
+                                <span class="text-sm text-gray-500 first-letter:uppercase shrink-0">{{ $item['cierre']->formattedRange() }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             {{-- Info box --}}
             <div class="mt-12 bg-brand-50/50 rounded-2xl border border-brand-100/50 p-6 lg:p-8 max-w-3xl">
@@ -177,7 +201,7 @@
                     </li>
                     <li class="flex items-start gap-3 text-sm text-gray-600">
                         <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0">3</span>
-                        Nuestro equipo te lleva el pedido a casa en 24–48 horas.
+                        Nuestro equipo te lo lleva a casa el pr&oacute;ximo d&iacute;a de reparto de tu zona. Al finalizar el pedido te decimos la fecha exacta.
                     </li>
                     <li class="flex items-start gap-3 text-sm text-gray-600">
                         <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0">4</span>

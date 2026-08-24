@@ -9,6 +9,13 @@ use App\Models\Order;
 use App\Services\Notifications\NotificationChannel;
 use Illuminate\Support\Facades\Mail;
 
+/**
+ * Correos de pedido, maquetados sobre el layout común (<x-mail.layout>).
+ *
+ * Cada mensaje se envía en HTML y en texto plano: el texto es además lo que se
+ * guarda en `notification_logs`, para que el historial del pedido se pueda leer
+ * sin renderizar nada.
+ */
 class EmailChannel implements NotificationChannel
 {
     public function id(): string
@@ -30,30 +37,37 @@ class EmailChannel implements NotificationChannel
 
     public function send(Order $order, string $recipient, string $event, array $context = []): array
     {
-        [$subject, $body] = $event === NotificationLog::EVENT_ORDER_CREATED
-            ? $this->buildOrderCreated($order)
-            : $this->buildStatusChanged($order);
+        $mensaje = match ($event) {
+            NotificationLog::EVENT_STORE_COPY    => $this->buildStoreCopy($order),
+            NotificationLog::EVENT_ORDER_CREATED => $this->buildOrderCreated($order),
+            default                              => $this->buildStatusChanged($order),
+        };
 
-        Mail::raw($body, function ($message) use ($recipient, $subject) {
-            $message->to($recipient)
-                ->subject($subject);
-        });
+        Mail::send(
+            ['html' => $mensaje['view'], 'text' => 'emails.plain'],
+            $mensaje['data'] + ['texto' => $mensaje['body']],
+            function ($message) use ($recipient, $mensaje) {
+                $message->to($recipient)
+                    ->subject($mensaje['subject'])
+                    // El remitente puede ser la cuenta de correo desde la que se
+                    // envía; las respuestas del cliente van al buzón público.
+                    ->replyTo(config('tienda.email'), config('tienda.nombre'));
+            },
+        );
 
         return [
-            'subject' => $subject,
-            'body'    => $body,
+            'subject' => $mensaje['subject'],
+            'body'    => $mensaje['body'],
         ];
     }
 
     /**
-     * Acuse de recibo del pedido, con el detalle de las líneas.
+     * Acuse de recibo al cliente, con el detalle de las líneas.
      *
-     * @return array{0: string, 1: string}
+     * @return array{subject: string, view: string, data: array<string, mixed>, body: string}
      */
     private function buildOrderCreated(Order $order): array
     {
-        $subject = "🧾 Hemos recibido tu pedido {$order->order_number}";
-
         $lineas = $order->items->map(function ($item) {
             $nombre = $item->product?->name ?? 'Producto';
 
@@ -64,6 +78,7 @@ class EmailChannel implements NotificationChannel
             "¡Hola, {$order->customer_name}!",
             '',
             "Hemos recibido tu pedido {$order->order_number}. Lo estamos revisando y te avisaremos cuando esté preparado para el reparto.",
+            ...$this->fechaPrevista($order),
             '',
             'Detalle del pedido:',
         ], $lineas, [
@@ -80,11 +95,18 @@ class EmailChannel implements NotificationChannel
             $this->firma(),
         ]));
 
-        return [$subject, $body];
+        return [
+            'subject' => "🧾 Hemos recibido tu pedido {$order->order_number}",
+            'view'    => 'emails.orders.created',
+            'data'    => ['order' => $order],
+            'body'    => $body,
+        ];
     }
 
     /**
-     * @return array{0: string, 1: string}
+     * Aviso de cambio de estado. El pedido entregado tiene su propio mensaje.
+     *
+     * @return array{subject: string, view: string, data: array<string, mixed>, body: string}
      */
     private function buildStatusChanged(Order $order): array
     {
@@ -97,7 +119,12 @@ class EmailChannel implements NotificationChannel
             default                  => '📋',
         };
 
-        $subject = "{$emoji} Tu pedido {$order->order_number} — {$statusLabel}";
+        $titulo = match ($order->status) {
+            Order::STATUS_PREPARADO  => 'Tu pedido ya está preparado',
+            Order::STATUS_EN_REPARTO => 'Tu pedido va de camino',
+            Order::STATUS_ENTREGADO  => 'Pedido entregado, ¡gracias!',
+            default                  => 'Tu pedido ha cambiado de estado',
+        };
 
         $statusMessage = match ($order->status) {
             Order::STATUS_PREPARADO  => 'Tu pedido está listo y preparado para el reparto.',
@@ -121,7 +148,70 @@ class EmailChannel implements NotificationChannel
             $this->firma(),
         ]);
 
-        return [$subject, $body];
+        return [
+            'subject' => "{$emoji} Tu pedido {$order->order_number} — {$statusLabel}",
+            'view'    => 'emails.orders.status',
+            'data'    => ['order' => $order, 'titulo' => $titulo, 'mensaje' => $statusMessage],
+            'body'    => $body,
+        ];
+    }
+
+    /**
+     * Copia interna para la librería cuando entra un pedido por la web.
+     *
+     * @return array{subject: string, view: string, data: array<string, mixed>, body: string}
+     */
+    private function buildStoreCopy(Order $order): array
+    {
+        $lineas = $order->items->map(function ($item) {
+            $nombre = $item->product?->name ?? 'Producto';
+
+            return "  · {$item->quantity} × {$nombre} — ".$this->money((float) $item->total);
+        })->all();
+
+        $body = implode("\n", array_merge([
+            "Nuevo pedido web: {$order->order_number}",
+            '',
+            "Cliente: {$order->customer_name}",
+            "Teléfono: {$order->customer_phone}",
+            'Email: '.($order->customer_email ?: 'no facilitado — avisar por teléfono'),
+            '',
+            "Entrega: {$order->delivery_address}, CP {$order->postal_code}",
+            ...$this->fechaPrevista($order, 'Fecha prevista: '),
+            $order->notes ? "Indicaciones: {$order->notes}" : '',
+            '',
+            'Líneas:',
+        ], $lineas, [
+            '',
+            'Total: '.$this->money((float) $order->total),
+            '',
+            'El pedido entra en Verial al marcarlo como preparado.',
+        ]));
+
+        return [
+            'subject' => "🛎️ Nuevo pedido {$order->order_number} — {$order->customer_name}",
+            'view'    => 'emails.orders.store-copy',
+            'data'    => ['order' => $order],
+            'body'    => $body,
+        ];
+    }
+
+    /**
+     * Día de reparto anunciado al confirmar el pedido, si la zona tiene uno.
+     *
+     * @return list<string>
+     */
+    private function fechaPrevista(Order $order, ?string $prefijo = null): array
+    {
+        $fecha = $order->formattedEstimatedDelivery();
+
+        if ($fecha === null) {
+            return [];
+        }
+
+        return $prefijo !== null
+            ? [$prefijo.$fecha]
+            : ['', "Según los días de reparto de tu zona, te lo llevamos el {$fecha}."];
     }
 
     /**

@@ -35,6 +35,22 @@ return [
 
     'email' => 'info@barcodepapel.es',
 
+    /*
+     | Datos del titular para el aviso legal, la política de privacidad y las
+     | condiciones de venta. Son obligatorios por la LSSI-CE y el RGPD: hay que
+     | rellenar `razon_social` y `nif` antes de abrir la tienda al público. Las
+     | páginas legales omiten los campos que estén vacíos.
+     */
+    'legal' => [
+        // Nombre fiscal de la persona física o jurídica titular del negocio.
+        'razon_social' => null,
+        'nif'          => null,
+        // Datos de inscripción registral, solo si la titular es una sociedad.
+        'registro' => null,
+        // Fecha de la última revisión de los textos legales.
+        'actualizado' => '2026-08-22',
+    ],
+
     // Coordenadas del local (JSON-LD, metas geo y mapa de la página de contacto)
     'geo' => [
         'latitud'  => 38.9091633,

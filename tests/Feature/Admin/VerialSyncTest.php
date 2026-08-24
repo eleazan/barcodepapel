@@ -3,11 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use App\Models\VerialSyncLog;
 use App\Services\Verial\VerialClient;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 function adminUser(): User
 {

@@ -4,15 +4,32 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Correos de la tienda en lugar de las plantillas genéricas de Laravel.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -45,11 +62,24 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function casts(): array
     {
         return [
-            'email_verified_at'  => 'datetime',
-            'password'           => 'hashed',
-            'is_admin'           => 'boolean',
-            'verial_cliente_id'  => 'integer',
+            'email_verified_at' => 'datetime',
+            'password'          => 'hashed',
+            'is_admin'          => 'boolean',
+            'verial_cliente_id' => 'integer',
         ];
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Avisos enviados al cliente: los de sus pedidos y los de su cuenta.
+     */
+    public function notificationLogs(): HasMany
+    {
+        return $this->hasMany(NotificationLog::class);
     }
 
     /**
@@ -57,7 +87,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function initials(): string
     {
-        $words = explode(' ', trim($this->name));
+        $words    = explode(' ', trim($this->name));
         $initials = '';
 
         foreach (array_slice($words, 0, 2) as $word) {

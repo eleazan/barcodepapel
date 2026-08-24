@@ -30,7 +30,7 @@ class SyncOrderStatusCommand extends Command
 
         if (! $result->isOk()) {
             foreach ($result->errorMessages as $msg) {
-                $this->warn('  - ' . $msg);
+                $this->warn('  - '.$msg);
             }
         }
 

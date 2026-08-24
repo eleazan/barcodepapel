@@ -21,7 +21,7 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'customer_name'      => ['required', 'string', 'min:3', 'max:255'],
-            'customer_email'     => ['nullable', 'email:rfc', 'max:255'],
+            'customer_email'     => ['required', 'email:rfc', 'max:255'],
             'customer_phone'     => ['required', 'string', 'min:9', 'max:30', 'regex:/^[0-9+\s().-]+$/'],
             'delivery_address'   => ['required', 'string', 'min:5', 'max:500'],
             'postal_code'        => ['required', 'digits:5', app(CodigoPostalConReparto::class)],
@@ -38,6 +38,7 @@ class CheckoutRequest extends FormRequest
         return [
             'customer_name.required'      => 'Necesitamos tu nombre para el reparto.',
             'customer_name.min'           => 'El nombre es demasiado corto.',
+            'customer_email.required'     => 'Necesitamos un email para enviarte la confirmación del pedido.',
             'customer_email.email'        => 'Introduce un email válido para enviarte la confirmación.',
             'customer_phone.required'     => 'El teléfono es obligatorio: lo usamos para avisarte de la entrega.',
             'customer_phone.min'          => 'El teléfono es demasiado corto.',
@@ -69,11 +70,12 @@ class CheckoutRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'postal_code'    => trim((string) $this->input('postal_code')),
-            'customer_name'  => trim((string) $this->input('customer_name')),
+            'postal_code'   => trim((string) $this->input('postal_code')),
+            'customer_name' => trim((string) $this->input('customer_name')),
+            // Sin email en el formulario se usa el de la cuenta, que siempre existe.
             'customer_email' => $this->filled('customer_email')
                 ? trim((string) $this->input('customer_email'))
-                : null,
+                : $this->user()?->email,
         ]);
     }
 

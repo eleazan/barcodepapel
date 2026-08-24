@@ -22,23 +22,28 @@ class SitemapController extends Controller
         $urls->push(['loc' => route('contact'), 'changefreq' => 'monthly', 'priority' => '0.5']);
         $urls->push(['loc' => route('blog.index'), 'changefreq' => 'weekly', 'priority' => '0.8']);
 
+        // Legal pages
+        $urls->push(['loc' => route('terms'), 'changefreq' => 'yearly', 'priority' => '0.3']);
+        $urls->push(['loc' => route('privacy'), 'changefreq' => 'yearly', 'priority' => '0.3']);
+        $urls->push(['loc' => route('legal'), 'changefreq' => 'yearly', 'priority' => '0.3']);
+
         // Categories
         Category::active()->orderBy('sort_order')->each(function ($category) use ($urls) {
             $urls->push([
-                'loc' => route('catalog', ['categoria' => $category->slug]),
-                'lastmod' => $category->updated_at->toW3cString(),
+                'loc'        => route('catalog', ['categoria' => $category->slug]),
+                'lastmod'    => $category->updated_at->toW3cString(),
                 'changefreq' => 'weekly',
-                'priority' => '0.7',
+                'priority'   => '0.7',
             ]);
         });
 
         // Products
         Product::active()->orderBy('updated_at', 'desc')->each(function ($product) use ($urls) {
             $urls->push([
-                'loc' => route('product', $product),
-                'lastmod' => $product->updated_at->toW3cString(),
+                'loc'        => route('product', $product),
+                'lastmod'    => $product->updated_at->toW3cString(),
                 'changefreq' => 'weekly',
-                'priority' => '0.8',
+                'priority'   => '0.8',
             ]);
         });
 
@@ -49,10 +54,10 @@ class SitemapController extends Controller
                 ->orderByDesc('published_at')
                 ->each(function ($post) use ($urls) {
                     $urls->push([
-                        'loc' => route('blog.show', $post),
-                        'lastmod' => $post->updated_at->toW3cString(),
+                        'loc'        => route('blog.show', $post),
+                        'lastmod'    => $post->updated_at->toW3cString(),
                         'changefreq' => 'monthly',
-                        'priority' => '0.7',
+                        'priority'   => '0.7',
                     ]);
                 });
         }

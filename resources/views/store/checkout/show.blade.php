@@ -18,6 +18,40 @@
                 <p class="mt-2 text-gray-500">Repartimos nosotros mismos en toda la isla. El pago se realiza en el momento de la entrega.</p>
             </div>
 
+            {{-- El carrito cambió entre que el cliente vio el resumen y confirmó: no se ha creado el pedido --}}
+            @if (session('cart_changes'))
+                <div class="mb-8 p-5 rounded-2xl bg-amber-50 border border-amber-300" role="alert">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                        <div>
+                            <p class="text-sm font-medium text-amber-900">Tu pedido ha cambiado y todav&iacute;a no lo hemos registrado</p>
+                            <ul class="mt-2 text-sm text-amber-800 space-y-1 list-disc list-inside">
+                                @foreach (session('cart_changes') as $cambio)
+                                    <li>{{ $cambio }}</li>
+                                @endforeach
+                            </ul>
+                            <p class="mt-3 text-sm text-amber-800">
+                                Revisa el resumen actualizado y vuelve a pulsar <strong>Confirmar pedido</strong> si te parece bien.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Ajustes al reconciliar el carrito con el catálogo --}}
+            @if (! empty($avisos))
+                <div class="mb-8 p-4 rounded-2xl bg-amber-50 border border-amber-200" role="alert">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                        <div class="text-sm text-amber-800 space-y-1">
+                            @foreach ($avisos as $aviso)
+                                <p>{{ $aviso }}</p>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <form
                 method="POST"
                 action="{{ route('checkout.store') }}"
@@ -79,12 +113,15 @@
                                 </div>
 
                                 <div>
-                                    <label for="customer_email" class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                                    <label for="customer_email" class="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Email <span class="text-red-500">*</span>
+                                    </label>
                                     <input
                                         id="customer_email"
                                         name="customer_email"
                                         type="email"
                                         value="{{ old('customer_email', $usuario?->email) }}"
+                                        required
                                         autocomplete="email"
                                         maxlength="255"
                                         class="w-full rounded-xl border-gray-200 text-sm focus:border-brand-400 focus:ring-brand-400 @error('customer_email') border-red-300 @enderror"
@@ -92,7 +129,7 @@
                                     @error('customer_email')
                                         <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                                     @else
-                                        <p class="mt-1.5 text-xs text-gray-500">Opcional. Si lo indicas, te enviamos la confirmaci&oacute;n.</p>
+                                        <p class="mt-1.5 text-xs text-gray-500">Te enviamos aqu&iacute; la confirmaci&oacute;n del pedido.</p>
                                     @enderror
                                 </div>
                             </div>
@@ -128,13 +165,22 @@
 
                                     {{-- Resultado de la comprobación en vivo --}}
                                     <template x-if="estado === 'ok'">
-                                        <p class="mt-2 text-sm text-emerald-700 flex items-center gap-1.5">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            <span>
-                                                Repartimos aqu&iacute;<span x-show="zona" x-cloak> (<span x-text="zona"></span>)</span>.
-                                                Gastos: <strong x-text="gastos"></strong>
-                                            </span>
-                                        </p>
+                                        <div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                                            <p class="text-sm text-emerald-800 flex items-start gap-1.5">
+                                                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>
+                                                    Repartimos aqu&iacute;<span x-show="zona" x-cloak> (<span x-text="zona"></span>)</span>.
+                                                    Gastos: <strong x-text="gastos"></strong>
+                                                </span>
+                                            </p>
+                                            <p class="mt-2 pl-6 text-sm text-emerald-800" x-show="proximaEntrega" x-cloak>
+                                                Te lo llevamos el <strong x-text="proximaEntrega"></strong>.
+                                            </p>
+                                            <p class="mt-1 pl-6 text-xs text-emerald-700" x-show="diasReparto" x-cloak>
+                                                En esta zona repartimos <span x-text="diasReparto"></span>.
+                                                <span x-show="motivoRetraso" x-cloak><span x-text="motivoRetraso"></span>, as&iacute; que pasa al siguiente d&iacute;a de reparto.</span>
+                                            </p>
+                                        </div>
                                     </template>
                                     <template x-if="estado === 'fuera'">
                                         <p class="mt-2 text-sm text-red-600 flex items-center gap-1.5">
@@ -196,8 +242,9 @@
                                     class="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-400"
                                 >
                                 <span class="text-sm text-gray-600">
-                                    Acepto las condiciones de venta y reparto: el pedido se entrega en la direcci&oacute;n indicada
-                                    dentro de nuestras <a href="{{ route('delivery') }}" class="text-brand-700 underline">zonas de reparto</a>
+                                    Acepto las <a href="{{ route('terms') }}" target="_blank" rel="noopener" class="text-brand-700 underline">condiciones de venta y reparto</a>:
+                                    el pedido se entrega en la direcci&oacute;n indicada dentro de nuestras
+                                    <a href="{{ route('delivery') }}" target="_blank" rel="noopener" class="text-brand-700 underline">zonas de reparto</a>
                                     y el pago se realiza en el momento de la entrega.
                                     <span class="text-red-500">*</span>
                                 </span>
@@ -205,6 +252,15 @@
                             @error('acepta_condiciones')
                                 <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
                             @enderror
+
+                            {{-- Información básica de protección de datos (art. 11 LOPDGDD) --}}
+                            <p class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500 leading-relaxed">
+                                {{ config('tienda.legal.razon_social') ?: config('tienda.nombre') }} trata tus datos para gestionar y entregar este pedido,
+                                sobre la base de la ejecuci&oacute;n del contrato de compraventa, y los comunica a nuestro proveedor de gesti&oacute;n comercial
+                                para la facturaci&oacute;n. Puedes ejercer tus derechos de acceso, rectificaci&oacute;n, supresi&oacute;n, oposici&oacute;n,
+                                limitaci&oacute;n y portabilidad escribiendo a <a href="mailto:{{ config('tienda.email') }}" class="text-brand-700 underline">{{ config('tienda.email') }}</a>.
+                                M&aacute;s informaci&oacute;n en la <a href="{{ route('privacy') }}" target="_blank" rel="noopener" class="text-brand-700 underline">pol&iacute;tica de privacidad</a>.
+                            </p>
                         </div>
                     </div>
 
@@ -237,6 +293,17 @@
                                         <span x-show="estado !== 'ok'" class="text-gray-400 font-normal">Seg&uacute;n c&oacute;digo postal</span>
                                     </dd>
                                 </div>
+                                <div class="flex items-start justify-between gap-3">
+                                    <dt class="text-gray-500 shrink-0">Entrega</dt>
+                                    <dd class="text-right">
+                                        <template x-if="estado === 'ok' && proximaEntrega">
+                                            <span class="font-medium text-gray-900" x-text="proximaEntrega"></span>
+                                        </template>
+                                        <template x-if="estado !== 'ok' || ! proximaEntrega">
+                                            <span class="text-gray-400">Seg&uacute;n c&oacute;digo postal</span>
+                                        </template>
+                                    </dd>
+                                </div>
                                 <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                                     <dt class="font-medium text-gray-900">Total</dt>
                                     <dd class="font-display text-2xl text-brand-700">
@@ -257,7 +324,7 @@
                             </button>
 
                             <p class="mt-4 text-xs text-gray-500 text-center">
-                                No se realiza ning&uacute;n cobro online. Pagas al recibir el pedido.
+                                IVA incluido. No se realiza ning&uacute;n cobro online: pagas al recibir el pedido.
                             </p>
 
                             <a href="{{ route('cart.index') }}" class="mt-4 block text-center text-sm text-gray-500 hover:text-brand-700 transition-colors">

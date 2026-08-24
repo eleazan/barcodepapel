@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Delivery;
 
 use App\Models\DeliveryZone;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -45,6 +46,23 @@ class DeliveryZoneResolver
     public function fee(?string $postalCode): float
     {
         return (float) ($this->resolve($postalCode)?->delivery_fee ?? 0.0);
+    }
+
+    /**
+     * Primer día de reparto para un código postal, según los días de la zona
+     * que se le aplica (la de tarifa más baja, la misma que se le cobra).
+     */
+    public function nextDeliveryDate(?string $postalCode): ?CarbonImmutable
+    {
+        return $this->resolve($postalCode)?->nextDeliveryDate();
+    }
+
+    /**
+     * Etiqueta legible de los días de reparto de un código postal.
+     */
+    public function deliveryDaysLabel(?string $postalCode): ?string
+    {
+        return $this->resolve($postalCode)?->deliveryDaysLabel();
     }
 
     /**

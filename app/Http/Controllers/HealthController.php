@@ -25,7 +25,7 @@ class HealthController extends Controller
             $checks['database'] = ['status' => 'ok'];
         } catch (\Throwable $e) {
             $checks['database'] = ['status' => 'error', 'message' => 'Cannot connect to database'];
-            $healthy = false;
+            $healthy            = false;
         }
 
         // Cache check
@@ -36,7 +36,7 @@ class HealthController extends Controller
                 : ['status' => 'error', 'message' => 'Cache read/write failed'];
         } catch (\Throwable $e) {
             $checks['cache'] = ['status' => 'error', 'message' => 'Cache unavailable'];
-            $healthy = false;
+            $healthy         = false;
         }
 
         // Storage check
@@ -47,7 +47,7 @@ class HealthController extends Controller
             $checks['storage'] = ['status' => 'ok'];
         } catch (\Throwable $e) {
             $checks['storage'] = ['status' => 'error', 'message' => 'Storage not writable'];
-            $healthy = false;
+            $healthy           = false;
         }
 
         return response()->json([

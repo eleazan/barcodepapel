@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Category>
+ * @extends Factory<Category>
  */
 class CategoryFactory extends Factory
 {
@@ -17,11 +18,11 @@ class CategoryFactory extends Factory
         $name = fake()->unique()->words(2, true);
 
         return [
-            'name' => ucfirst($name),
-            'slug' => Str::slug($name),
+            'name'        => ucfirst($name),
+            'slug'        => Str::slug($name),
             'description' => fake()->sentence(),
-            'is_active' => true,
-            'sort_order' => fake()->numberBetween(0, 10),
+            'is_active'   => true,
+            'sort_order'  => fake()->numberBetween(0, 10),
         ];
     }
 }

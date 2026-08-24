@@ -26,6 +26,7 @@ class ImportBooksCsvCommand extends Command
 
         if (! file_exists($path)) {
             $this->error("Archivo no encontrado: {$path}");
+
             return self::FAILURE;
         }
 
@@ -36,6 +37,7 @@ class ImportBooksCsvCommand extends Command
         $handle = fopen($path, 'r');
         if (! $handle) {
             $this->error('No se pudo abrir el archivo.');
+
             return self::FAILURE;
         }
 
@@ -91,7 +93,7 @@ class ImportBooksCsvCommand extends Command
                 DB::transaction(function () use ($ficha, $nombre, $barcode, $stock, $categoria, &$importados) {
                     $slug = Str::slug($nombre);
                     if (Product::where('slug', $slug)->exists()) {
-                        $slug .= '-' . $barcode;
+                        $slug .= '-'.$barcode;
                     }
 
                     $product = Product::create([
@@ -161,6 +163,7 @@ class ImportBooksCsvCommand extends Command
             $count++;
         }
         fclose($handle);
+
         return $count;
     }
 }

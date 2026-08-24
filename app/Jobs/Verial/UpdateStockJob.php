@@ -30,7 +30,7 @@ class UpdateStockJob implements ShouldQueue
 
         foreach ($this->stocks as $item) {
             $verialId = (int) ($item['CodigoArticulo'] ?? 0);
-            $stock = (int) ($item['Stock'] ?? $item['Unidades'] ?? 0);
+            $stock    = (int) ($item['Stock'] ?? $item['Unidades'] ?? 0);
 
             if ($verialId === 0) {
                 continue;

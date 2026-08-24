@@ -45,6 +45,7 @@ class Order extends Model
         'subtotal',
         'delivery_fee',
         'total',
+        'estimated_delivery_date',
         'notes',
         'verial_pedido_id',
         'verial_referencia',
@@ -55,10 +56,11 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'subtotal'          => 'decimal:2',
-            'delivery_fee'      => 'decimal:2',
-            'total'             => 'decimal:2',
-            'verial_enviado_at' => 'datetime',
+            'subtotal'                => 'decimal:2',
+            'delivery_fee'            => 'decimal:2',
+            'total'                   => 'decimal:2',
+            'estimated_delivery_date' => 'date',
+            'verial_enviado_at'       => 'datetime',
         ];
     }
 
@@ -109,6 +111,14 @@ class Order extends Model
     public function formattedDeliveryFee(): string
     {
         return number_format((float) $this->delivery_fee, 2, ',', '.').' €';
+    }
+
+    /**
+     * Día de reparto anunciado al cliente: «jueves, 27 de agosto».
+     */
+    public function formattedEstimatedDelivery(): ?string
+    {
+        return $this->estimated_delivery_date?->translatedFormat('l, j \d\e F');
     }
 
     public function isEnviadoAVerial(): bool

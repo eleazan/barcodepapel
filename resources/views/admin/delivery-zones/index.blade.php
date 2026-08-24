@@ -11,15 +11,16 @@
             <form method="GET" action="{{ route('admin.delivery-zones.index') }}" class="flex items-center gap-3 w-full">
                 <div class="relative flex-1 max-w-xs">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar CP o colonia..." class="form-input pl-9 py-2">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar CP o barrio..." class="form-input pl-9 py-2">
                 </div>
             </form>
         </x-slot:header>
 
         <x-slot:head>
             <x-admin.th>Código postal</x-admin.th>
-            <x-admin.th>Colonia</x-admin.th>
+            <x-admin.th>Barrio</x-admin.th>
             <x-admin.th>Ciudad</x-admin.th>
+            <x-admin.th>Días de reparto</x-admin.th>
             <x-admin.th align="right">Tarifa envío</x-admin.th>
             <x-admin.th align="center">Estado</x-admin.th>
             <x-admin.th align="right">Acciones</x-admin.th>
@@ -35,6 +36,12 @@
                 </x-admin.td>
                 <x-admin.td>
                     <span class="text-gray-500">{{ $zone->city ?: '—' }}</span>
+                </x-admin.td>
+                <x-admin.td>
+                    <span class="text-gray-600 first-letter:uppercase">{{ $zone->deliveryDaysLabel() }}</span>
+                    @if ($zone->deliversAnyOpenDay())
+                        <span class="block text-xs text-gray-400">Sin día fijo</span>
+                    @endif
                 </x-admin.td>
                 <x-admin.td align="right">
                     <span class="font-medium text-gray-700">{{ $zone->formattedFee() }}</span>
@@ -63,7 +70,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="6">
+                <td colspan="7">
                     <x-admin.empty-state message="No hay zonas de reparto." action="Crear zona" :actionUrl="route('admin.delivery-zones.create')" />
                 </td>
             </tr>

@@ -42,14 +42,15 @@ class ReprocessBookIsbnCommand extends Command
 
         $query->chunkById(200, function ($products) use ($bar) {
             foreach ($products as $product) {
-                FetchBookDataFromIsbn::dispatch($product);
+                // refresh: rehace la ficha aunque el libro ya tenga portada
+                FetchBookDataFromIsbn::dispatch($product, true);
                 $bar->advance();
             }
         });
 
         $bar->finish();
         $this->newLine();
-        $this->info("Listo. Ejecuta: php artisan queue:work --sleep=1");
+        $this->info('Listo. Ejecuta: php artisan queue:work --sleep=1');
 
         return self::SUCCESS;
     }

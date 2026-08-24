@@ -22,7 +22,14 @@ class ProductBookDetail extends Model
         'edicion',
         'anio_publicacion',
         'google_books_synced_at',
+        'cover_source',
+        'cover_fetched_at',
+        'cover_attempts',
+        'cover_attempted_at',
     ];
+
+    /** Intentos sin portada tras los que el libro se descarta. */
+    public const MAX_COVER_ATTEMPTS = 3;
 
     protected function casts(): array
     {
@@ -30,7 +37,21 @@ class ProductBookDetail extends Model
             'paginas'                => 'integer',
             'anio_publicacion'       => 'integer',
             'google_books_synced_at' => 'datetime',
+            'cover_fetched_at'       => 'datetime',
+            'cover_attempts'         => 'integer',
+            'cover_attempted_at'     => 'datetime',
         ];
+    }
+
+    public function hasCover(): bool
+    {
+        return $this->cover_fetched_at !== null;
+    }
+
+    public function coverDiscarded(): bool
+    {
+        return $this->cover_fetched_at === null
+            && $this->cover_attempts >= self::MAX_COVER_ATTEMPTS;
     }
 
     public function product(): BelongsTo

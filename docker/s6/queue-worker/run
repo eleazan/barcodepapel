@@ -1,0 +1,19 @@
+#!/command/with-contenv bash
+# Worker de la cola. s6 lo supervisa: si el proceso muere (o se recicla al
+# agotar --max-time) se vuelve a levantar solo.
+
+cd "${APP_BASE_DIR:-/var/www/html}" || exit 1
+
+if [ "${QUEUE_WORKER_ENABLED:-true}" != "true" ]; then
+    echo "[queue-worker] desactivado por QUEUE_WORKER_ENABLED, no se procesa nada"
+    exec sleep infinity
+fi
+
+# --max-time recicla el proceso cada hora para que no se acumulen fugas de
+# memoria ni se quede con código viejo tras un despliegue.
+exec php artisan queue:work \
+    --queue="${QUEUE_WORKER_QUEUES:-default}" \
+    --tries="${QUEUE_WORKER_TRIES:-3}" \
+    --sleep="${QUEUE_WORKER_SLEEP:-3}" \
+    --timeout="${QUEUE_WORKER_TIMEOUT:-120}" \
+    --max-time="${QUEUE_WORKER_MAX_TIME:-3600}"
