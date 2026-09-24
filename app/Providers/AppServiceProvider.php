@@ -89,8 +89,8 @@ class AppServiceProvider extends ServiceProvider
             (int) config('services.google_books.per_minute', 60)
         ));
 
-        // Force HTTPS in production
-        if ($this->app->environment('production')) {
+        // Force HTTPS en producción o cuando APP_URL ya es https
+        if ($this->app->environment('production') || str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
 
