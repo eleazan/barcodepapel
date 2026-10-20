@@ -1,0 +1,43 @@
+# Contexto de build de Docker: lo que no debe entrar en la imagen.
+# `public/storage` es un enlace simbólico y en Windows hace fallar el build
+# ("invalid file request public/storage"). El resto evita arrastrar
+# dependencias del host (las instala el Dockerfile) y secretos.
+
+.git
+.claude
+.idea
+.vscode
+
+# Dependencias: las instalan composer y npm dentro de la imagen
+/vendor
+/node_modules
+
+# Generado en runtime o en el build
+/public/storage
+/public/build
+/public/hot
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+/storage/app/public
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# Secretos y configuración local (en producción las variables las pone Coolify)
+.env
+.env.backup
+.env.production
+
+# Resultados de pruebas
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+.phpunit.result.cache
