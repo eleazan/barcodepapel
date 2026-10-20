@@ -75,13 +75,17 @@ USER root
 COPY docker/s6/queue-worker /etc/s6-overlay/s6-rc.d/queue-worker
 COPY docker/s6/scheduler    /etc/s6-overlay/s6-rc.d/scheduler
 
-# El fichero vacío en user/contents.d es lo que da de alta el servicio.
+# Un fichero vacío en contents.d del bundle `user` da de alta el servicio. La
+# imagen base cambió de sitio ese directorio (s6-overlay 3.2: user-bundles.d en
+# lugar de s6-rc.d/user), así que se usa el que exista; si no hay ninguno, el
+# `touch` falla y el build se para en lugar de dejar la cola sin worker.
 RUN chmod +x /etc/s6-overlay/s6-rc.d/queue-worker/run \
              /etc/s6-overlay/s6-rc.d/queue-worker/finish \
              /etc/s6-overlay/s6-rc.d/scheduler/run \
              /etc/s6-overlay/s6-rc.d/scheduler/finish \
-    && touch /etc/s6-overlay/s6-rc.d/user/contents.d/queue-worker \
-             /etc/s6-overlay/s6-rc.d/user/contents.d/scheduler
+    && bundle=/etc/s6-overlay/user-bundles.d/user/contents.d \
+    && { [ -d "$bundle" ] || bundle=/etc/s6-overlay/s6-rc.d/user/contents.d; } \
+    && touch "$bundle/queue-worker" "$bundle/scheduler"
 
 USER www-data
 
