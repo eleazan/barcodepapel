@@ -51,6 +51,21 @@ return [
         'actualizado' => '2026-08-22',
     ],
 
+    /*
+     | Banner de campaña de la portada (vuelta al cole, Navidad, Día del Libro…).
+     | Con `activa` a false la portada no lo pinta. `url` es la ruta a la que lleva
+     | el botón; sin imagen se usa un fondo liso de la marca.
+     */
+    'campana' => [
+        'activa'    => true,
+        'etiqueta'  => 'Vuelta al cole',
+        'titulo'    => 'Libros de texto y material escolar sin colas',
+        'texto'     => 'Tráenos la lista o búscala en el catálogo. Te lo preparamos y te lo llevamos a casa.',
+        'boton'     => 'Ver el catálogo',
+        'url'       => '/catalogo',
+        'imagen'    => null,
+    ],
+
     // Coordenadas del local (JSON-LD, metas geo y mapa de la página de contacto)
     'geo' => [
         'latitud'  => 38.9091633,
